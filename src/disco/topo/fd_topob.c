@@ -654,7 +654,7 @@ fd_topob_finish( fd_topo_t *                topo,
 
     ulong page_sz = topo->max_page_size;
     if( total_wksp_footprint < topo->gigantic_page_threshold ) page_sz = FD_SHMEM_HUGE_PAGE_SZ;
-    if( FD_UNLIKELY( page_sz!=FD_SHMEM_HUGE_PAGE_SZ && page_sz!=FD_SHMEM_GIGANTIC_PAGE_SZ ) ) FD_LOG_ERR(( "invalid page_sz" ));
+    if( FD_UNLIKELY( page_sz!=FD_SHMEM_NORMAL_PAGE_SZ && page_sz!=FD_SHMEM_HUGE_PAGE_SZ && page_sz!=FD_SHMEM_GIGANTIC_PAGE_SZ ) ) FD_LOG_ERR(( "invalid page_sz" ));
 
     /* If the workspace is not locked, we can't use huge pages. */
     if( FD_UNLIKELY( !wksp->is_locked ) ) {
