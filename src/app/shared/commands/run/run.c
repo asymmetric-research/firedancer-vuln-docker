@@ -694,35 +694,35 @@ void
 fdctl_check_configure( config_t const * config ) {
   configure_result_t check = fd_cfg_stage_hugetlbfs.check( config );
   if( FD_UNLIKELY( check.result!=CONFIGURE_OK ) )
-    FD_LOG_ERR(( "Huge pages are not configured correctly: %s. You can run `fdctl configure init hugetlbfs` "
+    FD_LOG_WARNING(( "Huge pages are not configured correctly: %s. You can run `fdctl configure init hugetlbfs` "
                  "to create the mounts correctly. This must be done after every system restart before running "
                  "Firedancer.", check.message ));
 
   if( FD_LIKELY( !config->development.netns.enabled && 0==strcmp( config->net.provider, "xdp" ) ) ) {
     check = fd_cfg_stage_ethtool_channels.check( config );
     if( FD_UNLIKELY( check.result!=CONFIGURE_OK ) )
-      FD_LOG_ERR(( "Network %s. You can run `fdctl configure init ethtool-channels` to set the number of channels on the "
+      FD_LOG_WARNING(( "Network %s. You can run `fdctl configure init ethtool-channels` to set the number of channels on the "
                   "network device correctly.", check.message ));
 
     check = fd_cfg_stage_ethtool_offloads.check( config );
     if( FD_UNLIKELY( check.result!=CONFIGURE_OK ) )
-      FD_LOG_ERR(( "Network %s. You can run `fdctl configure init ethtool-offloads` to disable features "
+      FD_LOG_WARNING(( "Network %s. You can run `fdctl configure init ethtool-offloads` to disable features "
                   "as required.", check.message ));
 
     check = fd_cfg_stage_ethtool_loopback.check( config );
     if( FD_UNLIKELY( check.result!=CONFIGURE_OK ) )
-      FD_LOG_ERR(( "Network %s. You can run `fdctl configure init ethtool-loopback` to disable tx-udp-segmentation "
+      FD_LOG_WARNING(( "Network %s. You can run `fdctl configure init ethtool-loopback` to disable tx-udp-segmentation "
                   "on the loopback device.", check.message ));
   }
 
   check = fd_cfg_stage_sysctl.check( config );
   if( FD_UNLIKELY( check.result!=CONFIGURE_OK ) )
-    FD_LOG_ERR(( "Kernel parameters are not configured correctly: %s. You can run `fdctl configure init sysctl` "
+    FD_LOG_WARNING(( "Kernel parameters are not configured correctly: %s. You can run `fdctl configure init sysctl` "
                  "to set kernel parameters correctly.", check.message ));
 
   check = fd_cfg_stage_hyperthreads.check( config );
   if( FD_UNLIKELY( check.result!=CONFIGURE_OK ) )
-    FD_LOG_ERR(( "Hyperthreading is not configured correctly: %s. You can run `fdctl configure init hyperthreads` "
+    FD_LOG_WARNING(( "Hyperthreading is not configured correctly: %s. You can run `fdctl configure init hyperthreads` "
                  "to configure hyperthreading correctly.", check.message ));
 }
 

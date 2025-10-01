@@ -179,9 +179,9 @@ check( config_t const * config ) {
   if( 0==strcmp( config->net.provider, "xdp" ) ) {
     r = check_param_list( xdp_params );
   } else if( 0==strcmp( config->net.provider, "socket" ) ) {
-    sock_params[ 0 ].value = config->net.socket.receive_buffer_size;
-    sock_params[ 1 ].value = config->net.socket.send_buffer_size;
-    r = check_param_list( sock_params );
+    // sock_params[ 0 ].value = config->net.socket.receive_buffer_size;
+    // sock_params[ 1 ].value = config->net.socket.send_buffer_size;
+    // r = check_param_list( sock_params );
   } else {
     FD_LOG_ERR(( "unknown net provider: %s", config->net.provider ));
   }

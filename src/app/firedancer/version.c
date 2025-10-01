@@ -11,9 +11,9 @@
 #define FIREDANCER_COMMIT_REF_U32 0x0
 #endif
 
-ulong const firedancer_major_version     = FIREDANCER_MAJOR_VERSION;
-ulong const firedancer_minor_version     = FIREDANCER_MINOR_VERSION;
-ulong const firedancer_patch_version     = FIREDANCER_PATCH_VERSION;
+ulong const firedancer_major_version     = 0;
+ulong const firedancer_minor_version     = 1;
+ulong const firedancer_patch_version     = 9;
 uint  const firedancer_commit_ref        = FIREDANCER_COMMIT_REF_U32;
 char  const firedancer_commit_ref_string[] = FIREDANCER_COMMIT_REF_CSTR;
 char  const firedancer_version_string[]  = FD_EXPAND_THEN_STRINGIFY(FIREDANCER_MAJOR_VERSION) "." FD_EXPAND_THEN_STRINGIFY(FIREDANCER_MINOR_VERSION) "." FD_EXPAND_THEN_STRINGIFY(FIREDANCER_PATCH_VERSION);
