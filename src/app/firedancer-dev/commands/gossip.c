@@ -764,6 +764,8 @@ gossip_cmd_fn( args_t *   args,
   FD_LOG_NOTICE(("HELLO"));
 
   ulong net_tile_idx = fd_topo_find_tile( &config->topo, "net", 0UL );
+  if( FD_UNLIKELY( net_tile_idx==ULONG_MAX ) )
+    net_tile_idx = fd_topo_find_tile( &config->topo, "sock", 0UL );
   FD_TEST( net_tile_idx!=ULONG_MAX );
   fd_topo_tile_t * net_tile = &config->topo.tiles[ net_tile_idx ];
 
