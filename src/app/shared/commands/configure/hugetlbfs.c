@@ -441,7 +441,7 @@ check( config_t const * config ) {
       FD_LOG_ERR(( "error closing `/proc/self/mounts` (%i-%s)", errno, fd_io_strerror( errno ) ));
 
     if( FD_UNLIKELY( !found ) )
-      PARTIALLY_CONFIGURED( "mount `%s` not found in `/proc/self/mounts`", mount_path[ i ] );
+      FD_LOG_WARNING(( "mount `%s` not found in `/proc/self/mounts`", mount_path[ i ] ));
   }
 
   CONFIGURE_OK();

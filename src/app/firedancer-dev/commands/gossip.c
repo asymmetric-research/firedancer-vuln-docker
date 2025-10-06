@@ -749,7 +749,7 @@ gossip_cmd_fn( args_t *   args,
 
   if( 0==strcmp( config->net.provider, "xdp" ) ) {
     fd_topo_install_xdp( &config->topo, config->net.bind_address_parsed );
-  }
+  } 
   fd_topo_join_workspaces( &config->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   fd_topo_fill( &config->topo );
 
@@ -760,6 +760,8 @@ gossip_cmd_fn( args_t *   args,
   /* Collect all gossvf tiles instead of just the first one */
   gossvf_tiles_t gossvf_tiles = collect_gossvf_tiles( &config->topo );
   printf("Found %lu gossvf tiles\n", gossvf_tiles.tile_count);
+
+  FD_LOG_NOTICE(("HELLO"));
 
   ulong net_tile_idx = fd_topo_find_tile( &config->topo, "net", 0UL );
   FD_TEST( net_tile_idx!=ULONG_MAX );
