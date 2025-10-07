@@ -67,12 +67,6 @@ static const sysctl_param_t xdp_params[] = {
     0,
   },
   {
-    "/proc/sys/net/core/bpf_jit_enable",
-    1,
-    WARN_MINIMUM,
-    0,
-  },
-  {
     "/proc/sys/net/ipv4/conf/lo/route_localnet",
     1,
     ENFORCE_MINIMUM,
