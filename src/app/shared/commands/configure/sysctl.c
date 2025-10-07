@@ -80,13 +80,13 @@ static sysctl_param_t sock_params[] = {
     "/proc/sys/net/core/rmem_max",
     0,
     ENFORCE_MINIMUM,
-    0,
+    1,
   },
   {
     "/proc/sys/net/core/wmem_max",
     0,
     ENFORCE_MINIMUM,
-    0,
+    1,
   },
   {0}
 };
