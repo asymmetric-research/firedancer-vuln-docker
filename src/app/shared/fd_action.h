@@ -22,6 +22,10 @@ union fdctl_args {
   } monitor;
 
   struct {
+    int drain_output_fd;
+  } watch;
+
+  struct {
     int                      command;
     struct configure_stage * stages[ CONFIGURE_STAGE_COUNT ];
   } configure;
@@ -34,12 +38,16 @@ union fdctl_args {
 
   struct {
     int  parent_pipefd;
-    int  monitor;
+    int  no_watch;
     int  no_configure;
     int  no_init_workspaces;
     int  no_agave;
     char debug_tile[ 32 ];
   } dev;
+
+  struct {
+    int no_watch;
+  } backtest;
 
   struct {
     char tile_name[ 7UL ];
@@ -72,6 +80,7 @@ union fdctl_args {
     char manifest_path[ 256UL ];
     char iptable_path[ 256UL ];
     int  metrics_only;
+    int  forest_only;
   } repair;
 
   struct {

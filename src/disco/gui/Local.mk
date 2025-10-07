@@ -1,33 +1,25 @@
 ifdef FD_HAS_INT128
-$(call add-hdrs,fd_gui.h fd_gui_printf.h)
-$(call add-objs,fd_gui fd_gui_printf fd_gui_tile generated/http_import_dist,fd_disco)
+$(call add-hdrs,fd_gui.h fd_gui_printf.h fd_gui_peers.h)
+$(call add-objs,fd_gui fd_gui_printf fd_gui_peers fd_gui_tile generated/http_import_dist,fd_disco)
 $(OBJDIR)/obj/disco/gui/fd_gui_tile.o: book/public/fire.svg
 $(call make-unit-test,test_live_table,test_live_table,fd_disco fd_util)
 endif
 
 src/disco/gui/dist_stable_cmp/%.zst: src/disco/gui/dist_stable/%
-	@if [ ! -f $@ ]; then \
-		mkdir -p $(@D); \
-		zstd -19 $< -o $@; \
-	fi
+	mkdir -p $(@D);
+	zstd -f -19 $< -o $@;
 
 src/disco/gui/dist_stable_cmp/%.gz: src/disco/gui/dist_stable/%
-	@if [ ! -f $@ ]; then \
-		mkdir -p $(@D); \
-		gzip -c -9 $< > $@; \
-	fi
+	mkdir -p $(@D);
+	gzip -f -c -9 $< > $@;
 
 src/disco/gui/dist_alpha_cmp/%.zst: src/disco/gui/dist_alpha/%
-	@if [ ! -f $@ ]; then \
-		mkdir -p $(@D); \
-		zstd -19 $< -o $@; \
-	fi
+	mkdir -p $(@D);
+	zstd -f -19 $< -o $@;
 
 src/disco/gui/dist_alpha_cmp/%.gz: src/disco/gui/dist_alpha/%
-	@if [ ! -f $@ ]; then \
-		mkdir -p $(@D); \
-		gzip -c -9 $< > $@; \
-	fi
+	mkdir -p $(@D);
+	gzip -f -c -9 $< > $@;
 
 FD_GUI_FRONTEND_STABLE_FILES := $(shell find src/disco/gui/dist_stable -type f)
 FD_GUI_FRONTEND_ALPHA_FILES := $(shell find src/disco/gui/dist_alpha -type f)

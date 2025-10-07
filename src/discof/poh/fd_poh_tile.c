@@ -86,11 +86,11 @@ after_credit( fd_poh_tile_t *     ctx,
 /* ....
 
     1. replay -> (pack, poh) ... start packing for slot
-    2. if slot in progress -> pack -> poh (done_packing) for old slot
+    2. if slot in progress -> pack -> poh (abandon_packing) for old slot
     3. pack free to start packing
-    4. if poh slot in progress, refuse replay frag ... until see done_packing
+    4. if poh slot in progress, refuse replay frag ... until see abandon_packing
     5. poh must process pack frags in order
-    6. when poh sees done_packing, return poh -> replay saying bank unused now */
+    6. when poh sees done_packing/abandon_packing, return poh -> replay saying bank unused now */
 
 static inline int
 returnable_frag( fd_poh_tile_t *     ctx,
@@ -122,7 +122,7 @@ returnable_frag( fd_poh_tile_t *     ctx,
   if( FD_UNLIKELY( ctx->in_kind[ in_idx ]==IN_KIND_REPLAY && fd_poh_have_leader_bank( ctx->poh ) ) ) return 1;
   if( FD_LIKELY( ctx->in_kind[ in_idx ]==IN_KIND_BANK || ctx->in_kind[ in_idx ]==IN_KIND_PACK ) ) {
     uint pack_idx = (uint)fd_disco_bank_sig_pack_idx( sig );
-    FD_TEST( ((int)(pack_idx-ctx->expect_pack_idx))>=0L );
+    if( FD_UNLIKELY( ((int)(pack_idx-ctx->expect_pack_idx))<0L ) ) FD_LOG_ERR(( "received out of order pack_idx %u (expecting %u)", pack_idx, ctx->expect_pack_idx ));
     if( FD_UNLIKELY( pack_idx!=ctx->expect_pack_idx ) ) return 1;
     ctx->expect_pack_idx++;
   }
@@ -139,15 +139,22 @@ returnable_frag( fd_poh_tile_t *     ctx,
         fd_poh_begin_leader( ctx->poh, became_leader->slot, became_leader->hashcnt_per_tick, became_leader->ticks_per_slot, became_leader->tick_duration_ns, became_leader->max_microblocks_in_slot );
       } else if( sig==REPLAY_SIG_RESET ) {
         fd_poh_reset_t const * reset = fd_chunk_to_laddr_const( ctx->in[ in_idx ].mem, chunk );
-        fd_poh_reset( ctx->poh, stem, reset->hashcnt_per_tick, reset->ticks_per_slot, reset->tick_duration_ns, reset->completed_slot, reset->completed_blockhash, reset->next_leader_slot, reset->max_microblocks_in_slot, reset->completed_block_id );
+        fd_poh_reset( ctx->poh, stem, reset->timestamp, reset->hashcnt_per_tick, reset->ticks_per_slot, reset->tick_duration_ns, reset->completed_slot, reset->completed_blockhash, reset->next_leader_slot, reset->max_microblocks_in_slot, reset->completed_block_id );
       }
       break;
     }
     case IN_KIND_BANK: {
+      ulong target_slot = fd_disco_bank_sig_slot( sig );
+      if( FD_UNLIKELY( fd_poh_hashing_to_leader_slot( ctx->poh ) ) ) {
+        /* If we are skipping to a leader slot, we can't process bank
+           microblocks until we are actually ready to mix them in, which
+           is when we have hashed through the slots being skipped. */
+        return 1;
+      }
+
       ulong txn_cnt = (sz-sizeof(fd_microblock_trailer_t))/sizeof(fd_txn_p_t);
       fd_txn_p_t const * txns = fd_chunk_to_laddr_const( ctx->in[ in_idx ].mem, chunk );
       fd_microblock_trailer_t const * trailer = fd_type_pun_const( (uchar const*)txns+sz-sizeof(fd_microblock_trailer_t) );
-      ulong target_slot = fd_disco_bank_sig_slot( sig );
       fd_poh1_mixin( ctx->poh, stem, target_slot, trailer->hash, txn_cnt, txns );
       break;
     }
