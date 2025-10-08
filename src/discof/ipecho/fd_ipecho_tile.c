@@ -72,7 +72,7 @@ poll_client( fd_ipecho_tile_ctx_t * ctx,
     ctx->retrieving = 0;
     return;
   } else if( FD_UNLIKELY( -1==result ) ) {
-    FD_LOG_ERR(( "Could not determine shred version from entrypoints.  Please "
+    FD_LOG_WARNING(( "Could not determine shred version from entrypoints.  Please "
                  "check you can connect to the entrypoints provided." ));
   }
 }

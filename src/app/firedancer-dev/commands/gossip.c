@@ -761,8 +761,6 @@ gossip_cmd_fn( args_t *   args,
   gossvf_tiles_t gossvf_tiles = collect_gossvf_tiles( &config->topo );
   printf("Found %lu gossvf tiles\n", gossvf_tiles.tile_count);
 
-  FD_LOG_NOTICE(("HELLO"));
-
   ulong net_tile_idx = fd_topo_find_tile( &config->topo, "net", 0UL );
   if( FD_UNLIKELY( net_tile_idx==ULONG_MAX ) )
     net_tile_idx = fd_topo_find_tile( &config->topo, "sock", 0UL );
