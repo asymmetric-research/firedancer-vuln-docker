@@ -242,7 +242,6 @@ before_frag( fd_gossvf_tile_ctx_t * ctx,
              ulong                  seq,
              ulong                  sig ) {
 
-  FD_LOG_NOTICE(("***FD GOSSIP Before FRAG %d", ctx->in[ in_idx ].kind));
   if( FD_UNLIKELY( !ctx->shred_version && ctx->in[ in_idx ].kind!=IN_KIND_SHRED_VERSION ) ) return -1;
 
   switch( ctx->in[ in_idx ].kind ) {
@@ -265,7 +264,6 @@ during_frag( fd_gossvf_tile_ctx_t * ctx,
              ulong                  sz,
              ulong                  ctl FD_PARAM_UNUSED ) {
 
-  FD_LOG_NOTICE(("***FD GOSSIP During FRAG %d", ctx->in[ in_idx ].kind));
   if( FD_UNLIKELY( chunk<ctx->in[ in_idx ].chunk0 || chunk>ctx->in[ in_idx ].wmark || sz>ctx->in[ in_idx ].mtu ) )
     FD_LOG_ERR(( "chunk %lu %lu corrupt, not in range [%lu,%lu,%lu]", chunk, sz, ctx->in[ in_idx ].chunk0, ctx->in[ in_idx ].wmark, ctx->in[ in_idx ].mtu ));
 
@@ -771,8 +769,6 @@ handle_net( fd_gossvf_tile_ctx_t * ctx,
   fd_ip4_hdr_t * ip4_hdr;
   fd_udp_hdr_t * udp_hdr;
 
-  FD_LOG_NOTICE(("***FD GOSSIP HANDLE NET %lud", sz));
-
   FD_TEST( fd_ip4_udp_hdr_strip( ctx->payload, sz, &payload, &payload_sz, NULL, &ip4_hdr, &udp_hdr ) );
   ctx->peer.addr = ip4_hdr->saddr;
   ctx->peer.port = udp_hdr->net_sport;
@@ -905,8 +901,6 @@ after_frag( fd_gossvf_tile_ctx_t * ctx,
   (void)seq;
   (void)sig;
   (void)_tspub;
-
-  FD_LOG_NOTICE(("***FD GOSSIP After FRAG %d", ctx->in[ in_idx ].kind));
 
   switch( ctx->in[ in_idx ].kind ) {
     case IN_KIND_SHRED_VERSION: break;
