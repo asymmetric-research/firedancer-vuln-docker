@@ -93,9 +93,7 @@ init_tiles( fd_drv_t * drv ) {
   for( ulong i=0UL; i<drv->config.topo.tile_cnt; i++ ) {
     fd_topo_tile_t * topo_tile = &drv->config.topo.tiles[ i ];
     fd_topo_run_tile_t * run_tile = tile_topo_to_run( drv, topo_tile );
-    run_tile->privileged_init( &drv->config.topo, topo_tile );
-    run_tile->unprivileged_init( &drv->config.topo, topo_tile );
-    // fd_metrics_register( topo_tile->metrics ); // TODO check if this is correct in a one thread world
+    fd_topo_run_tile( &drv->config.topo, topo_tile, 0, 0, 1, drv->config.uid, drv->config.gid, 0, NULL, NULL, run_tile );
   }
 }
 
@@ -197,7 +195,7 @@ FOR(quic_tile_cnt)  fd_topos_tile_in_net( topo,"metric_in", "quic_net",i,FD_TOPO
 FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.ingress_buffer_size );
 FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
-//quic link out to verify - A CONSUMER TILE IS REQUIRED
+//quic link out to verify - use tricks to add link with no consumers
 // FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
 // FOR(quic_tile_cnt) fd_topob_tile_out(    topo, "quic",i,"quic_verify",  i);
 
@@ -258,7 +256,7 @@ fd_drv_init( fd_drv_t * drv ) {
 	isolated_quic_topo( drv);	
 	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
   configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
-  configure_stage( &fd_cfg_stage_hugetlbfs,        CONFIGURE_CMD_INIT, conf );
+  configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
   fdctl_check_configure( conf );
   initialize_workspaces(conf);
   initialize_stacks( conf );  
