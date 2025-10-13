@@ -4,6 +4,9 @@
 #include "../../disco/topo/fd_cpu_topo.h"
 #include "../fdctl/config.h"
 #include "../fdctl/topology.h"
+#include "../shared/commands/run/run.h"
+#include "../../util/tile/fd_tile_private.h" /* fd_tile_private_cpus_parse */
+
 #include <assert.h>
 
 
@@ -84,68 +87,6 @@ tile_topo_to_run( fd_drv_t * drv, fd_topo_tile_t * topo_tile ) {
   return find_run_tile( drv, topo_tile->name );
 }
 
-/* Maybe similar to what initialize workspaces does, without
-   following it closely */
-static void
-back_wksps( fd_topo_t * topo, fd_topo_obj_callbacks_t * callbacks[] ) {
-  ulong keyswitch_obj_id = ULONG_MAX;
-  for( ulong i=0UL; i<topo->obj_cnt; i++ ) {
-    fd_topo_obj_t * obj = &topo->objs[ i ];
-    fd_topo_obj_callbacks_t * cb = NULL;
-    for( ulong j=0UL; callbacks[ j ]; j++ ) {
-      if( FD_UNLIKELY( !strcmp( callbacks[ j ]->name, obj->name ) ) ) {
-        cb = callbacks[ j ];
-        break;
-      }
-    }
-    ulong align = cb->align( topo, obj );
-
-    obj->wksp_id = obj->id;
-    topo->workspaces[ obj->wksp_id ].wksp = aligned_alloc( align, obj->footprint );
-    obj->offset = 0UL;
-    FD_LOG_NOTICE(( "obj %s %lu %lu %lu %lu", obj->name, obj->wksp_id, obj->footprint, obj->offset, align ));
-    FD_LOG_NOTICE(( "wksp pointer %p", (void*)topo->workspaces[ obj->wksp_id ].wksp ));
-    /* ~equivalent to fd_topo_wksp_new in a world of real workspaces */
-    if( FD_UNLIKELY( cb->new ) ) { /* only saw this null for tiles */
-      cb->new( topo, obj );
-    }
-    if( FD_UNLIKELY( 0== strcmp( obj->name, "keyswitch" ) ) ) {
-      keyswitch_obj_id = obj->id;
-    }
-    // TODO add ASAN and MSAN poisoned memory before and after
-  }
-
-  /* The rest of this function an adoption of fd_topo_wksp_fill without
-     the wksp id checks.  I haven't looked into why they are needed */
-  for( ulong i=0UL; i<topo->link_cnt; i++ ) {
-    fd_topo_link_t * link = &topo->links[ i ];
-    link->mcache = fd_mcache_join( fd_topo_obj_laddr( topo, link->mcache_obj_id ) );
-#ifdef FD_HAS_FUZZ /* TODO now basically everything needs FUZZ */
-    link->mcache->hook = fd_drv_publish_hook;
-#endif
-    FD_TEST( link->mcache );
-    /* only saw this false for tile code */
-    if( FD_LIKELY( link->mtu ) ) {
-      link->dcache = fd_dcache_join( fd_topo_obj_laddr( topo, link->dcache_obj_id ) );
-      FD_TEST( link->dcache );
-    }
-  }
-
-  for( ulong i=0UL; i<topo->tile_cnt; i++ ) {
-    fd_topo_tile_t * tile = &topo->tiles[ i ];
-    tile->keyswitch_obj_id = keyswitch_obj_id;
-
-    tile->metrics = fd_metrics_join( fd_topo_obj_laddr( topo, tile->metrics_obj_id ) );
-    FD_TEST( tile->metrics );
-
-    for( ulong j=0UL; j<tile->in_cnt; j++ ) {
-      tile->in_link_fseq[ j ] = fd_fseq_join( fd_topo_obj_laddr( topo, tile->in_link_fseq_obj_id[ j ] ) );
-      FD_TEST( tile->in_link_fseq[ j ] );
-    }
-  }
-}
-
-
 
 static void
 init_tiles( fd_drv_t * drv ) {
@@ -189,12 +130,37 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 static void
 isolated_quic_topo( fd_drv_t * drv, fd_topo_obj_callbacks_t * callbacks[]  ) {
 	fd_config_t * config = &drv->config;
-
+  FD_LOG_INFO(("config name : %s", config->name));
   fd_topo_t * topo = &config->topo;
-  ulong tile_to_cpu[ FD_TILE_MAX ] = {0}; // required by net helpers
-  
-  fd_topob_new( &config->topo, config->name );
 
+  // ulong tile_to_cpu[ FD_TILE_MAX ] = {0}; // required by net helpers
+  char const * affinity = config->layout.affinity;
+  int is_auto_affinity = !strcmp( affinity, "auto" );
+  ushort parsed_tile_to_cpu[ FD_TILE_MAX ];
+  for( ulong i=0UL; i<FD_TILE_MAX; i++ ) parsed_tile_to_cpu[ i ] = USHORT_MAX;
+
+  fd_topo_cpus_t cpus[1];
+  fd_topo_cpus_init( cpus );
+
+  ulong affinity_tile_cnt = 0UL;
+  if( FD_LIKELY( !is_auto_affinity ) ) affinity_tile_cnt = fd_tile_private_cpus_parse( affinity, parsed_tile_to_cpu );
+
+  ulong tile_to_cpu[ FD_TILE_MAX ] = {0};
+  for( ulong i=0UL; i<affinity_tile_cnt; i++ ) {
+    if( FD_UNLIKELY( parsed_tile_to_cpu[ i ]!=USHORT_MAX && parsed_tile_to_cpu[ i ]>=cpus->cpu_cnt ) )
+      FD_LOG_ERR(( "The CPU affinity string in the configuration file under [layout.affinity] specifies a CPU index of %hu, but the system "
+                   "only has %lu CPUs. You should either change the CPU allocations in the affinity string, or increase the number of CPUs "
+                   "in the system.",
+                   parsed_tile_to_cpu[ i ], cpus->cpu_cnt ));
+    tile_to_cpu[ i ] = fd_ulong_if( parsed_tile_to_cpu[ i ]==USHORT_MAX, ULONG_MAX, (ulong)parsed_tile_to_cpu[ i ] );
+  }
+  if( FD_LIKELY( !is_auto_affinity ) ) {
+    if( FD_UNLIKELY( affinity_tile_cnt!=4UL ) )
+      FD_LOG_ERR(( "Invalid [layout.affinity]: must include exactly three CPUs" ));
+  }
+
+  fd_topob_new( &config->topo, config->name );
+  
   ulong quic_tile_cnt   = 1; 
   ulong net_tile_cnt    = 1;  
 		
@@ -209,10 +175,14 @@ isolated_quic_topo( fd_drv_t * drv, fd_topo_obj_callbacks_t * callbacks[]  ) {
    * - wksp net_umem and sock
    * - sock tile
    */
-  fd_topos_net_tiles( topo, net_tile_cnt, &config->net, 1, 1, 1, tile_to_cpu );
+  // fd_topos_net_tiles( topo, net_tile_cnt, &config->net, 1, 1, 1, tile_to_cpu );
+  fd_topob_wksp( topo, "net_umem" );
+  fd_topob_wksp( topo, "sock" );
+  fd_topob_tile( topo, "sock", "sock", "metric_in",tile_to_cpu[ topo->tile_cnt ], 0, 0 );
+
   fd_topob_wksp( topo, "quic");
   fd_topob_wksp( topo, "quic_net");
-FOR(quic_tile_cnt)   fd_topob_tile( topo, "quic","quic","metric_in",  0, 0,0 );
+FOR(quic_tile_cnt)   fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
 FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
 FOR(quic_tile_cnt) fd_topob_tile_out(    topo, "quic",i,"quic_net",  i);
 /**
@@ -236,38 +206,52 @@ FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i,
 
 FOR(net_tile_cnt) fd_topos_net_tile_finish( topo, i );
 
-  fd_topob_auto_layout( topo, 0 );
+
+  // fd_topob_auto_layout( topo, 0 );
+  // topo->agave_affinity_cnt = 0;
+
   (void)find_topo_tile;
-  fd_topo_print_log( /* stdout */ 1, topo );
   fd_topob_finish( topo, callbacks );
+  fd_topo_print_log( /* stdout */ 1, topo );
 }
 
 void
 fd_drv_init( fd_drv_t * drv ) {
 	
   fd_config_t* conf = &drv->config;
-  conf->tiles.quic.max_concurrent_connections = 8;
-  conf->tiles.quic.regular_transaction_listen_port = 9001;
-  conf->tiles.quic.quic_transaction_listen_port = 9007;
-  conf->tiles.quic.txn_reassembly_count = 4194304;
-  conf->tiles.quic.max_concurrent_handshakes = 4096;
-  conf->tiles.quic.idle_timeout_millis = 10000;
-  conf->tiles.quic.retry = 1;
-  conf->tiles.verify.receive_buffer_size = 134217728;
-  conf->tiles.quic.ack_delay_millis = 50;
 
-  strcpy(conf->net.provider, "socket");
-  conf->net.bind_address_parsed = 0;
-  conf->net.socket.receive_buffer_size = 134217728;
-  conf->net.socket.send_buffer_size = 134217728;
-  conf->net.ingress_buffer_size = 16384;
+  // conf->tiles.quic.max_concurrent_connections = 8;
+  // conf->tiles.quic.regular_transaction_listen_port = 9001;
+  // conf->tiles.quic.quic_transaction_listen_port = 9007;
+  // conf->tiles.quic.txn_reassembly_count = 4194304;
+  // conf->tiles.quic.max_concurrent_handshakes = 4096;
+  // conf->tiles.quic.idle_timeout_millis = 10000;
+  // conf->tiles.quic.retry = 1;
+  // conf->tiles.verify.receive_buffer_size = 134217728;
+  // conf->tiles.quic.ack_delay_millis = 50;
 
-  strcpy( drv->config.name, "quic_firestarter" );  
+  // strcpy(conf->net.provider, "socket");
+  // conf->net.bind_address_parsed = 0;
+  // conf->net.socket.receive_buffer_size = 134217728;
+  // conf->net.socket.send_buffer_size = 134217728;
+  // conf->net.ingress_buffer_size = 16384;
+
+
+  // strcpy(conf->hugetlbfs.huge_page_mount_path , "/mnt/.fd/.huge");
+  // strcpy(conf->hugetlbfs.gigantic_page_mount_path , "/mnt/.fd/.gigantic");
+
+  // strcpy( drv->config.name, "quic_firestarter" );  
+
 	isolated_quic_topo( drv, drv->callbacks );	
 	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
-  back_wksps( &conf->topo, drv->callbacks );  
+  configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
+  configure_stage( &fd_cfg_stage_hugetlbfs,        CONFIGURE_CMD_INIT, conf );
+  fdctl_check_configure( conf );
+  initialize_workspaces(conf);
+  initialize_stacks( conf );
+  fd_topo_join_workspaces( &conf->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
-	init_tiles( drv );
+	init_tiles( drv );  
 }
 
 
