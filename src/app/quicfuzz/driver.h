@@ -4,12 +4,13 @@
 #include "../../disco/topo/fd_topob.h"
 #include "../shared/fd_config.h"
 #include "../../disco/quic/fd_tpu.h"
-
+#include "../shared/fd_config_file.h"
 #include "../shared/fd_action.h"
 #include "../fdctl/config.h"
 #include "../../util/fd_util.h"
 #include "../../tango/fseq/fd_fseq.h"
 #include "../shared/commands/configure/configure.h"
+
 struct fd_drv_private {
   fd_topo_run_tile_t **      tiles;
   fd_topo_obj_callbacks_t ** callbacks;
@@ -17,6 +18,8 @@ struct fd_drv_private {
 };
 typedef struct fd_drv_private fd_drv_t;
 
+void
+isolated_quic_topo( fd_drv_t * drv );
 
 void
 fd_drv_init( fd_drv_t * drv );

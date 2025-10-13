@@ -54,11 +54,8 @@ main( int    argc,
     fd_drv_t * drv = fd_drv_join( fd_drv_new( shmem, TILES, CALLBACKS ) );
     if( FD_UNLIKELY( !drv ) ) FD_LOG_ERR(( "creating quic fuzz driver failed" ));
 
-    fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, NULL, 0UL, NULL, &drv->config );	
-    // memset( &drv->config, 0, sizeof(config_t) );
-    // fd_config_load_buf( &drv->config, ( char const * )fdquic_default_config, fdquic_default_config_sz, "" );
+    fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, NULL, 0UL, NULL, &drv->config );
     FD_LOG_INFO(("NAME %s", drv->config.name ));
-
     fd_drv_init( drv );
     return 0;
 }

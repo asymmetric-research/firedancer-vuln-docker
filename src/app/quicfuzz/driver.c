@@ -127,25 +127,25 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 													
 }
 
-static void
-isolated_quic_topo( fd_drv_t * drv, fd_topo_obj_callbacks_t * callbacks[]  ) {
+void
+isolated_quic_topo( fd_drv_t * drv ) {
 	fd_config_t * config = &drv->config;
   FD_LOG_INFO(("config name : %s", config->name));
   fd_topo_t * topo = &config->topo;
 
   // ulong tile_to_cpu[ FD_TILE_MAX ] = {0}; // required by net helpers
-  char const * affinity = config->layout.affinity;
-  int is_auto_affinity = !strcmp( affinity, "auto" );
   ushort parsed_tile_to_cpu[ FD_TILE_MAX ];
   for( ulong i=0UL; i<FD_TILE_MAX; i++ ) parsed_tile_to_cpu[ i ] = USHORT_MAX;
 
   fd_topo_cpus_t cpus[1];
   fd_topo_cpus_init( cpus );
 
-  ulong affinity_tile_cnt = 0UL;
-  if( FD_LIKELY( !is_auto_affinity ) ) affinity_tile_cnt = fd_tile_private_cpus_parse( affinity, parsed_tile_to_cpu );
+  ulong affinity_tile_cnt = 2UL;
+  // if( FD_LIKELY( !is_auto_affinity ) ) affinity_tile_cnt = fd_tile_private_cpus_parse( affinity, parsed_tile_to_cpu );
 
   ulong tile_to_cpu[ FD_TILE_MAX ] = {0};
+  for( ulong i=0UL; i<FD_TILE_MAX; i++ ) tile_to_cpu[ i ] = 0;
+
   for( ulong i=0UL; i<affinity_tile_cnt; i++ ) {
     if( FD_UNLIKELY( parsed_tile_to_cpu[ i ]!=USHORT_MAX && parsed_tile_to_cpu[ i ]>=cpus->cpu_cnt ) )
       FD_LOG_ERR(( "The CPU affinity string in the configuration file under [layout.affinity] specifies a CPU index of %hu, but the system "
@@ -154,16 +154,16 @@ isolated_quic_topo( fd_drv_t * drv, fd_topo_obj_callbacks_t * callbacks[]  ) {
                    parsed_tile_to_cpu[ i ], cpus->cpu_cnt ));
     tile_to_cpu[ i ] = fd_ulong_if( parsed_tile_to_cpu[ i ]==USHORT_MAX, ULONG_MAX, (ulong)parsed_tile_to_cpu[ i ] );
   }
-  if( FD_LIKELY( !is_auto_affinity ) ) {
-    if( FD_UNLIKELY( affinity_tile_cnt!=4UL ) )
-      FD_LOG_ERR(( "Invalid [layout.affinity]: must include exactly three CPUs" ));
-  }
 
   fd_topob_new( &config->topo, config->name );
   
   ulong quic_tile_cnt   = 1; 
   ulong net_tile_cnt    = 1;  
-		
+  
+  // char const * affinity = config->layout.affinity;
+  // int is_auto_affinity = !strcmp( affinity, "auto" );
+	// if( FD_LIKELY( is_auto_affinity ) ) fd_topob_auto_layout( topo, 0 );
+
   fd_topob_wksp( topo, "metric_in" );
 
 #define FOR(cnt) for( ulong i=0UL; i<cnt; i++ )  
@@ -211,7 +211,7 @@ FOR(net_tile_cnt) fd_topos_net_tile_finish( topo, i );
   // topo->agave_affinity_cnt = 0;
 
   (void)find_topo_tile;
-  fd_topob_finish( topo, callbacks );
+  fd_topob_finish( topo, drv->callbacks );
   fd_topo_print_log( /* stdout */ 1, topo );
 }
 
@@ -242,13 +242,27 @@ fd_drv_init( fd_drv_t * drv ) {
 
   // strcpy( drv->config.name, "quic_firestarter" );  
 
-	isolated_quic_topo( drv, drv->callbacks );	
+
+
+  char * shmem_args[ 3 ];
+  /* pass in --shmem-path value from the config */
+  shmem_args[ 0 ] = "--shmem-path";
+  shmem_args[ 1 ] = conf->hugetlbfs.mount_path;
+  shmem_args[ 2 ] = NULL;
+  char ** argv = shmem_args;
+  int     argc = 2;
+  fd_shmem_private_boot( &argc, &argv );
+  fd_log_private_boot  ( &argc, &argv );
+  fd_tile_private_boot  ( &argc, &argv );
+
+	isolated_quic_topo( drv);	
 	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
   configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
   configure_stage( &fd_cfg_stage_hugetlbfs,        CONFIGURE_CMD_INIT, conf );
   fdctl_check_configure( conf );
   initialize_workspaces(conf);
-  initialize_stacks( conf );
+  initialize_stacks( conf );  
+  fdctl_setup_netns( conf, 1 );  
   fd_topo_join_workspaces( &conf->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
 	init_tiles( drv );  
