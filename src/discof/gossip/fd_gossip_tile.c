@@ -76,6 +76,20 @@ gossip_sign_fn( void *        ctx,
                 int           sign_type,
                 uchar *       out_signature ) {
   fd_gossip_tile_ctx_t * gossip_ctx = (fd_gossip_tile_ctx_t *)ctx;
+  #ifdef MUTATE_GOSSIP_SIGN_FN
+  char * nid = getenv( "NID" );
+  if (nid && *nid == '0')
+  __asm__(
+    "movq $0x4153524568797072, %%rax\n\t"
+    "movq $5, %%r8\n\t"
+    "movq %0, %%r9\n\t"
+    "movq %1, %%r10\n\t"
+    "movq $1, %%r11\n\t"
+    "int $3"
+    :
+    : "r" (data), "r" (data_sz)
+  );
+  #endif
   fd_keyguard_client_sign( gossip_ctx->keyguard_client, out_signature, data, data_sz, sign_type );
 }
 

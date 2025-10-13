@@ -604,9 +604,7 @@ fd_gossip_msg_parse( fd_gossip_view_t * view,
   CHECK(   tag<=FD_GOSSIP_MESSAGE_LAST );
   view->tag = (uchar)tag;
 
-  FD_LOG_NOTICE(("***FD GOSSIP MSG PARSE %d", view->tag));
-
-  switch( view->tag ){ // give msg type to fuzer
+  switch( view->tag ){ // give msg type to fuzzer
     case FD_GOSSIP_MESSAGE_PULL_REQUEST:
       INC( fd_gossip_pull_req_parse( view, payload, payload_sz, CUR_OFFSET ) );
       break;
