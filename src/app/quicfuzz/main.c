@@ -6,6 +6,7 @@ char const * FD_BINARY_NAME = "fd_quic_fuzz";
 
 extern fd_topo_run_tile_t fd_tile_quic;
 extern fd_topo_run_tile_t fd_tile_sock;
+// extern fd_topo_run_tile_t fd_tile_verify;
 
 extern fd_topo_obj_callbacks_t fd_obj_cb_tile;
 extern fd_topo_obj_callbacks_t fd_obj_cb_mcache;
@@ -33,6 +34,7 @@ fd_topo_obj_callbacks_t * CALLBACKS[] = {
 fd_topo_run_tile_t * TILES[] = {
   &fd_tile_quic,
   &fd_tile_sock,
+  // &fd_tile_verify,
   NULL
 };
 

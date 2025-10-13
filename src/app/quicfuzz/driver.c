@@ -8,7 +8,7 @@
 #include "../../util/tile/fd_tile_private.h" /* fd_tile_private_cpus_parse */
 
 #include <assert.h>
-
+#include <unistd.h> /* pause */
 
 #if !FD_HAS_HOSTED
 #error "This target requires FD_HAS_HOSTED"
@@ -18,7 +18,8 @@ extern fd_topo_run_tile_t fd_tile_quic;
 extern fd_topo_run_tile_t fd_tile_verify;
 extern fd_topo_run_tile_t fd_tile_net;
 
-
+fd_topo_run_tile_t
+fdctl_tile_run( fd_topo_tile_t const * tile );
 
 FD_FN_CONST ulong
 fd_drv_footprint( void ) {
@@ -65,37 +66,6 @@ fd_drv_publish_hook( fd_frag_meta_t const * mcache ) {
 }
 
 
-static fd_topo_run_tile_t *
-find_run_tile( fd_drv_t * drv, char * name ) {
-  for( ulong i=0UL; drv->tiles[ i ]; i++ ) {
-    if( 0==strcmp( name, drv->tiles[ i ]->name ) ) return drv->tiles[ i ];
-  }
-  FD_LOG_ERR(( "OPS tile %s not found", name ));
-}
-
-
-static fd_topo_tile_t *
-find_topo_tile( fd_drv_t * drv, char * name ) {
-  for( ulong i=0UL; drv->config.topo.tile_cnt; i++ ) {
-    if( 0==strcmp( name, drv->config.topo.tiles[ i ].name ) ) return &drv->config.topo.tiles[ i ];
-  }
-  FD_LOG_ERR(( "tile %s not found", name ));
-}
-
-static fd_topo_run_tile_t *
-tile_topo_to_run( fd_drv_t * drv, fd_topo_tile_t * topo_tile ) {
-  return find_run_tile( drv, topo_tile->name );
-}
-
-
-static void
-init_tiles( fd_drv_t * drv ) {
-  for( ulong i=0UL; i<drv->config.topo.tile_cnt; i++ ) {
-    fd_topo_tile_t * topo_tile = &drv->config.topo.tiles[ i ];
-    fd_topo_run_tile_t * run_tile = tile_topo_to_run( drv, topo_tile );
-    fd_topo_run_tile( &drv->config.topo, topo_tile, 0, 0, 1, drv->config.uid, drv->config.gid, 0, NULL, NULL, run_tile );
-  }
-}
 
 void
 fd_topo_configure_tile( fd_topo_tile_t * tile,
@@ -200,6 +170,12 @@ FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingre
 fd_link_permit_no_consumers(topo, "quic_verify");
 FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
 
+//   fd_topob_wksp( topo, "verify");
+// FOR(quic_tile_cnt)   fd_topob_tile( topo, "verify","verify","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
+// FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+// FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
+// FOR(quic_tile_cnt) fd_topob_tile_in( topo, "verify", i, "metric_in", "quic_verify", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
+
 
   for( ulong i=0UL; i<topo->tile_cnt; i++ ) fd_topo_configure_tile( &topo->tiles[ i ], config );
 
@@ -208,8 +184,6 @@ FOR(net_tile_cnt) fd_topos_net_tile_finish( topo, i );
 
   // fd_topob_auto_layout( topo, 0 );
   // topo->agave_affinity_cnt = 0;
-
-  (void)find_topo_tile;
   fd_topob_finish( topo, drv->callbacks );
   fd_topo_print_log( /* stdout */ 1, topo );
 }
@@ -218,29 +192,6 @@ void
 fd_drv_init( fd_drv_t * drv ) {
 	
   fd_config_t* conf = &drv->config;
-
-  // conf->tiles.quic.max_concurrent_connections = 8;
-  // conf->tiles.quic.regular_transaction_listen_port = 9001;
-  // conf->tiles.quic.quic_transaction_listen_port = 9007;
-  // conf->tiles.quic.txn_reassembly_count = 4194304;
-  // conf->tiles.quic.max_concurrent_handshakes = 4096;
-  // conf->tiles.quic.idle_timeout_millis = 10000;
-  // conf->tiles.quic.retry = 1;
-  // conf->tiles.verify.receive_buffer_size = 134217728;
-  // conf->tiles.quic.ack_delay_millis = 50;
-
-  // strcpy(conf->net.provider, "socket");
-  // conf->net.bind_address_parsed = 0;
-  // conf->net.socket.receive_buffer_size = 134217728;
-  // conf->net.socket.send_buffer_size = 134217728;
-  // conf->net.ingress_buffer_size = 16384;
-
-
-  // strcpy(conf->hugetlbfs.huge_page_mount_path , "/mnt/.fd/.huge");
-  // strcpy(conf->hugetlbfs.gigantic_page_mount_path , "/mnt/.fd/.gigantic");
-
-  // strcpy( drv->config.name, "quic_firestarter" );  
-
 
   char * shmem_args[ 3 ];
   /* pass in --shmem-path value from the config */
@@ -264,7 +215,9 @@ fd_drv_init( fd_drv_t * drv ) {
   fdctl_setup_netns( conf, 1 );  
   fd_topo_join_workspaces( &conf->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
-	init_tiles( drv );  
+	// init_tiles( drv );  
+  fd_topo_run_single_process( &drv->config.topo, 2, drv->config.uid,  drv->config.gid, fdctl_tile_run );
+  for(;;) pause(); 
 }
 
 
