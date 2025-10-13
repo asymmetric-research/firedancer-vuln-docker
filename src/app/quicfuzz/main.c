@@ -35,8 +35,8 @@ fd_topo_run_tile_t * TILES[] = {
 };
 
 // extern char const fdquic_default_config[1];
-extern ulong const fdquic_default_config_sz;
-FD_IMPORT_BINARY( fdquic_default_config, "src/app/quicfuzz/config/default.toml" );
+// extern ulong const fdquic_default_config_sz;
+// FD_IMPORT_BINARY( fdquic_default_config, "src/app/quicfuzz/config/default.toml" );
 
 
 action_t * ACTIONS[] = { NULL };
@@ -56,8 +56,8 @@ main( int    argc,
     // fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, NULL, 0UL, NULL, &drv->config );	
     memset( &drv->config, 0, sizeof(config_t) );
 
-    fd_config_load_buf( &drv->config, ( char const * )fdquic_default_config, fdquic_default_config_sz, "" );
-    FD_LOG_INFO(("NAME %s", drv->config.name ));
+    // fd_config_load_buf( &drv->config, ( char const * )fdquic_default_config, fdquic_default_config_sz, "" );
+    // FD_LOG_INFO(("NAME %s", drv->config.name ));
 
     fd_drv_init( drv );
     return 0;

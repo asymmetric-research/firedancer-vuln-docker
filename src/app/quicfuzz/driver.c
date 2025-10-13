@@ -56,74 +56,12 @@ fd_drv_publish_hook( fd_frag_meta_t const * mcache ) {
 }
 
 
-/* Maybe similar to what initialize workspaces does, without
-   following it closely */
-static void
-back_wksps( fd_topo_t * topo, fd_topo_obj_callbacks_t * callbacks[] ) {
-  ulong keyswitch_obj_id = ULONG_MAX;
-  for( ulong i=0UL; i<topo->obj_cnt; i++ ) {
-    fd_topo_obj_t * obj = &topo->objs[ i ];
-    fd_topo_obj_callbacks_t * cb = NULL;
-    for( ulong j=0UL; callbacks[ j ]; j++ ) {
-      if( FD_UNLIKELY( !strcmp( callbacks[ j ]->name, obj->name ) ) ) {
-        cb = callbacks[ j ];
-        break;
-      }
-    }
-    ulong align = cb->align( topo, obj );
-
-    obj->wksp_id = obj->id;
-    topo->workspaces[ obj->wksp_id ].wksp = aligned_alloc( align, obj->footprint );
-    obj->offset = 0UL;
-    FD_LOG_NOTICE(( "obj %s %lu %lu %lu %lu", obj->name, obj->wksp_id, obj->footprint, obj->offset, align ));
-    FD_LOG_NOTICE(( "wksp pointer %p", (void*)topo->workspaces[ obj->wksp_id ].wksp ));
-    /* ~equivalent to fd_topo_wksp_new in a world of real workspaces */
-    if( FD_UNLIKELY( cb->new ) ) { /* only saw this null for tiles */
-      cb->new( topo, obj );
-    }
-    if( FD_UNLIKELY( 0== strcmp( obj->name, "keyswitch" ) ) ) {
-      keyswitch_obj_id = obj->id;
-    }
-    // TODO add ASAN and MSAN poisoned memory before and after
-  }
-
-  /* The rest of this function an adoption of fd_topo_wksp_fill without
-     the wksp id checks.  I haven't looked into why they are needed */
-  for( ulong i=0UL; i<topo->link_cnt; i++ ) {
-    fd_topo_link_t * link = &topo->links[ i ];
-    link->mcache = fd_mcache_join( fd_topo_obj_laddr( topo, link->mcache_obj_id ) );
-#ifdef FD_HAS_FUZZ /* TODO now basically everything needs FUZZ */
-    link->mcache->hook = fd_drv_publish_hook;
-#endif
-    FD_TEST( link->mcache );
-    /* only saw this false for tile code */
-    if( FD_LIKELY( link->mtu ) ) {
-      link->dcache = fd_dcache_join( fd_topo_obj_laddr( topo, link->dcache_obj_id ) );
-      FD_TEST( link->dcache );
-    }
-  }
-
-  for( ulong i=0UL; i<topo->tile_cnt; i++ ) {
-    fd_topo_tile_t * tile = &topo->tiles[ i ];
-    tile->keyswitch_obj_id = keyswitch_obj_id;
-
-    tile->metrics = fd_metrics_join( fd_topo_obj_laddr( topo, tile->metrics_obj_id ) );
-    FD_TEST( tile->metrics );
-
-    for( ulong j=0UL; j<tile->in_cnt; j++ ) {
-      tile->in_link_fseq[ j ] = fd_fseq_join( fd_topo_obj_laddr( topo, tile->in_link_fseq_obj_id[ j ] ) );
-      FD_TEST( tile->in_link_fseq[ j ] );
-    }
-  }
-}
-
-
 static fd_topo_run_tile_t *
 find_run_tile( fd_drv_t * drv, char * name ) {
   for( ulong i=0UL; drv->tiles[ i ]; i++ ) {
     if( 0==strcmp( name, drv->tiles[ i ]->name ) ) return drv->tiles[ i ];
   }
-  FD_LOG_ERR(( "tile %s not found", name ));
+  FD_LOG_ERR(( "OPS tile %s not found", name ));
 }
 
 
@@ -145,10 +83,6 @@ tile_topo_to_run( fd_drv_t * drv, fd_topo_tile_t * topo_tile ) {
 static void
 init_tiles( fd_drv_t * drv ) {
   for( ulong i=0UL; i<drv->config.topo.tile_cnt; i++ ) {
-    /* TODO Hack fix for shred_topo: move to isolated_shred_topo */
-    // if( FD_UNLIKELY( 0==strcmp( drv->config.topo.tiles[i].name, "replay" ))) {
-    //   continue;
-    // }
     fd_topo_tile_t * topo_tile = &drv->config.topo.tiles[ i ];
     fd_topo_run_tile_t * run_tile = tile_topo_to_run( drv, topo_tile );
     // run_tile->privileged_init( &drv->config.topo, topo_tile );
@@ -186,88 +120,71 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 }
 
 static void
-isolated_quic_topo( config_t * config, fd_topo_obj_callbacks_t * callbacks[] ) {
-  fd_topo_t * topo = &config->topo;
+isolated_quic_topo( fd_drv_t * drv, fd_topo_obj_callbacks_t * callbacks[]  ) {
+	fd_config_t * config = &drv->config;
 
+  fd_topo_t * topo = &config->topo;
+  ulong tile_to_cpu[ FD_TILE_MAX ] = {0};
   fd_topob_new( &config->topo, config->name );
 
-  ulong quic_tile_cnt   = 1; //config->layout.quic_tile_count;
-  ulong net_tile_cnt    = 1; //config->layout.net_tile_count;  
-	
-	(void)quic_tile_cnt;
-	(void)net_tile_cnt;
-	(void)callbacks;
-	
-	fd_topob_wksp( topo, "sock" );
+  ulong quic_tile_cnt   = 1; 
+  ulong net_tile_cnt    = 1;  
+		
 	fd_topob_wksp( topo, "quic"         );
-  fd_topob_wksp( topo, "quic_verify"  );
   fd_topob_wksp( topo, "metric_in"    );	
-	fd_topob_wksp( topo, "net_quic"    );	
-	fd_topob_wksp( topo, "net_umem"    );
+	fd_topob_wksp( topo, "quic_net"    );
 
-	fd_topob_wksp( topo, "void"    );
 
 
 #define FOR(cnt) for( ulong i=0UL; i<cnt; i++ )  
+  FD_LOG_INFO(("provider %s", config->net.provider));
+  // add sock tile
+  fd_topos_net_tiles( topo, net_tile_cnt, &config->net, 0, 0, 0, tile_to_cpu );
+// FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "sock_quic",   i, config->net.ingress_buffer_size );
+FOR(net_tile_cnt) fd_topob_link( topo, "net_quic", "net_umem", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+FOR(net_tile_cnt)  fd_topob_tile_out( topo, "sock", 0, "net_quic", 0 );
+FOR(quic_tile_cnt)   fd_topob_tile( topo, "quic",    "quic",    "metric_in",  0, 0,        0 );
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net",     "quic_net", config->net.ingress_buffer_size, FD_NET_MTU,64UL );
+FOR(quic_tile_cnt) fd_topob_tile_out(    topo, "quic",i,"quic_net",  i);
+FOR(quic_tile_cnt) for( ulong j=0UL; j<net_tile_cnt; j++ ) fd_topob_tile_in(topo, "quic",i,"metric_in", "net_quic",j,FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED ); 
+FOR(quic_tile_cnt) fd_topob_tile_in( topo, "sock", 0, "metric_in", "quic_net", 0, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
-	FD_LOG_INFO(("CONFIGURING QUIC TILE"));
-
-	FOR(quic_tile_cnt)   fd_topob_tile( topo, "quic",    "quic",    "metric_in",  0, 0,        0 );
-
-	// fd_topos_net_tiles( topo, net_tile_cnt, &config->net, 0, 0, 0, tile_to_cpu );
-  FOR(net_tile_cnt) fd_topob_tile( topo, "sock", "sock", "metric_in",0, 0, 0 );
-	
-	FD_LOG_INFO(("CONFIGURING LINKS"));
-	fd_topob_tile( topo, "void", "void", "metric_in",0, 0, 0 );
-
-
-FOR(quic_tile_cnt)   fd_topob_link( topo, "quic_net",     "net_quic",     config->net.ingress_buffer_size,          FD_NET_MTU,                    1UL );
-FOR(quic_tile_cnt)   fd_topob_link( topo, "quic_verify",  "quic_verify",  config->tiles.verify.receive_buffer_size, FD_TPU_REASM_MTU,              config->tiles.quic.txn_reassembly_count );
-
-FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",   i, config->net.ingress_buffer_size );
-
-FOR(quic_tile_cnt)  fd_topos_tile_in_net( topo,                          "metric_in", "quic_net",     i,            FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED ); /* No reliable consumers of networking fragments, may be dropped or overrun */
-
-
-// FOR(quic_tile_cnt) for( ulong j=0UL; j<net_tile_cnt; j++ )
-// 										fd_topob_tile_in(     topo, "quic",    i,            "metric_in", "net_quic",     j,            FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED ); /* No reliable consumers of networking fragments, may be dropped or overrun */
-
-FOR(net_tile_cnt) for( ulong j=0UL; j<quic_tile_cnt; j++ )
-											fd_topob_tile_in(    topo, "void",  i,            "metric_in", "quic_verify",  j,            FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED ); /* No reliable consumers, verify tiles may be overrun */											 										
-
-FOR(quic_tile_cnt)  fd_topob_tile_out(    topo, "quic",    i,                         "quic_verify",  i                                                  );
-FOR(quic_tile_cnt)  fd_topob_tile_out(    topo, "quic",    i,                         "quic_net",     i                                                  );
-
-
-	FD_LOG_INFO(("CONFIGURING TILES %lu", topo->tile_cnt));
   for( ulong i=0UL; i<topo->tile_cnt; i++ ) fd_topo_configure_tile( &topo->tiles[ i ], config );
 
-	FD_LOG_INFO(("FINISHING"));
-
+  // fd_topo_obj_t * poh_shred_obj = fd_topob_obj( topo, "dcache", "net_umem" );
+  // fd_topo_tile_t* sock_tile = find_topo_tile(drv, "sock");
+  // fd_topob_tile_uses( topo, sock_tile, poh_shred_obj, FD_SHMEM_JOIN_MODE_READ_WRITE );
+  
+  (void)find_topo_tile;
   fd_topob_finish( topo, callbacks );
 	config->topo = *topo;	
-
 }
 
 void
 fd_drv_init( fd_drv_t * drv ) {
-	(void)back_wksps;
-	fd_config_t * config = &drv->config;
-	isolated_quic_topo( config, drv->callbacks );	
+	
+  fd_config_t* conf = &drv->config;
+  conf->tiles.quic.max_concurrent_connections = 8;
+  conf->tiles.quic.regular_transaction_listen_port = 9001;
+  conf->tiles.quic.quic_transaction_listen_port = 9007;
+  conf->tiles.quic.txn_reassembly_count = 4194304;
+  conf->tiles.quic.max_concurrent_handshakes = 4096;
+  conf->tiles.quic.idle_timeout_millis = 10000;
+  conf->tiles.quic.retry = 1;
+  conf->tiles.verify.receive_buffer_size = 134217728;
+  conf->tiles.quic.ack_delay_millis = 50;
+
+  strcpy(conf->net.provider, "socket");
+  conf->net.bind_address_parsed = 0;
+  conf->net.socket.receive_buffer_size = 134217728;
+  conf->net.socket.send_buffer_size = 134217728;
+  conf->net.ingress_buffer_size = 16384;
+
+  strcpy( drv->config.name, "quic_firestarter" );  
+	isolated_quic_topo( drv, drv->callbacks );	
 	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
-	back_wksps( &config->topo, drv->callbacks );
-	FD_LOG_INFO(( "tile cnt: %lu", config->topo.tile_cnt ));
+	FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
 	init_tiles( drv );
-}
-
-FD_FN_UNUSED void
-fd_drv_housekeeping( fd_drv_t * drv,
-                     char * tile_name,
-										 int backpressured) {
-	(void)backpressured;
-	fd_topo_tile_t *     topo_tile = find_topo_tile( drv, tile_name );
-	(void)topo_tile;
-
 }
 
 
