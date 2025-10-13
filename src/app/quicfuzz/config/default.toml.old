@@ -1,0 +1,74 @@
+name = "quic_firestarter"
+user = "vaioco"
+dynamic_port_range = "8900-9000"
+
+[net]
+provider = "socket"
+ingress_buffer_size = 16384
+
+[net.socket]
+    # Sets the socket receive buffer size via SO_RCVBUF.
+    # Raises net.core.rmem_max accordingly
+    receive_buffer_size = 134217728
+
+    # Sets the socket receive buffer size via SO_SNDBUF.
+    # Raises net.core.wmem_max accordingly`
+    send_buffer_size = 134217728
+
+[layout]
+affinity = "auto"
+verify_tile_count = 1
+quic_tile_count = 1
+net_tile_count = 1
+
+
+[tiles.verify]
+receive_buffer_size = 128
+
+[tiles.quic]
+# Which port to listen on for incoming, regular UDP transactions
+# that are not over QUIC.  These could be votes, user
+# transactions, or transactions forwarded from another
+# validator.
+regular_transaction_listen_port = 9001
+# Which port to listen on for incoming QUIC transactions.
+# Currently this must be exactly 6 more than the
+# transaction_listen_port.
+quic_transaction_listen_port = 9007
+# Maximum number of simultaneous QUIC connections which can be
+# open.  New connections which would exceed this limit will not
+# be accepted.
+#
+# This must be >= 2 and also a power of 2.
+max_concurrent_connections = 8
+# Controls how much transactions coming in via TPU can be
+# reassembled at the same time.  Reassembly is required for user
+# transactions larger than ca ~1200 bytes, as these arrive
+# fragmented.  This parameter should scale linearly with line
+# rate.  Usually, clients send all fragments at once, such that
+# each reassembly only takes a few microseconds.
+#
+# Higher values reduce TPU packet loss over unreliable networks.
+# If this parameter is set too low, packet loss can cause some
+# large transactions to get dropped.  Must be 2 or larger.
+txn_reassembly_count = 4194304
+# QUIC has a handshake process which establishes a secure
+# connection between two endpoints.  The handshake process is
+# very expensive. So we allow only a limited number of
+# handshakes to occur concurrently.
+#
+max_concurrent_handshakes = 4096
+# QUIC has a concept of an idle connection, one where neither
+# the client nor the server has sent any packet to the other for
+# a period of time.  Once this timeout is reached the connection
+# will be terminated.
+#
+# An idle connection will be terminated if it remains idle
+# longer than this threshold.
+idle_timeout_millis = 10000
+# Max delay for outgoing ACKs.
+ack_delay_millis = 50
+# QUIC retry is a feature to combat new connection request
+# spamming.  See rfc9000 8.1.2 for more details.  This flag
+# determines whether the feature is enabled in the validator.
+retry = true

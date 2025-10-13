@@ -47,4 +47,36 @@ void
 fd_drv_publish_hook( fd_frag_meta_t const * mcache );
 
 
+
+/* Use fd_link_permit_no_producers with links that do not have any
+   producers.  This may be required in sub-topologies used for
+   development and testing. */
+FD_FN_UNUSED static ulong
+fd_link_permit_no_producers( fd_topo_t * topo, char * link_name ) {
+  ulong found = 0UL;
+  for( ulong link_i = 0UL; link_i < topo->link_cnt; link_i++ ) {
+    if( !strcmp( topo->links[ link_i ].name, link_name ) ) {
+      topo->links[ link_i ].permit_no_producers = 1;
+      found++;
+    }
+  }
+  return found;
+}
+
+
+/* Use fd_link_permit_no_consumers with links that do not have any
+   consumers.  This may be required in sub-topologies used for
+   development and testing. */
+FD_FN_UNUSED static ulong
+fd_link_permit_no_consumers( fd_topo_t * topo, char * link_name ) {
+  ulong found = 0UL;
+  for( ulong link_i = 0UL; link_i < topo->link_cnt; link_i++ ) {
+    if( !strcmp( topo->links[ link_i ].name, link_name ) ) {
+      topo->links[ link_i ].permit_no_consumers = 1;
+      found++;
+    }
+  }
+  return found;
+}
+
 #endif

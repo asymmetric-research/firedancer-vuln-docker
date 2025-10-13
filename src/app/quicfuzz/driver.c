@@ -196,8 +196,9 @@ FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.ingress_
 FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
 //quic link out to verify - use tricks to add link with no consumers
-// FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
-// FOR(quic_tile_cnt) fd_topob_tile_out(    topo, "quic",i,"quic_verify",  i);
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+fd_link_permit_no_consumers(topo, "quic_verify");
+FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
 
 
   for( ulong i=0UL; i<topo->tile_cnt; i++ ) fd_topo_configure_tile( &topo->tiles[ i ], config );
@@ -241,7 +242,6 @@ fd_drv_init( fd_drv_t * drv ) {
   // strcpy( drv->config.name, "quic_firestarter" );  
 
 
-
   char * shmem_args[ 3 ];
   /* pass in --shmem-path value from the config */
   shmem_args[ 0 ] = "--shmem-path";
@@ -249,6 +249,7 @@ fd_drv_init( fd_drv_t * drv ) {
   shmem_args[ 2 ] = NULL;
   char ** argv = shmem_args;
   int     argc = 2;
+
   fd_shmem_private_boot( &argc, &argv );
   fd_log_private_boot  ( &argc, &argv );
   fd_tile_private_boot  ( &argc, &argv );

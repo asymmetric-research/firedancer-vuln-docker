@@ -60,6 +60,7 @@ fd_shmem_page_sz_to_cstr( ulong page_sz ) {
   return "unknown";
 }
 
+#define FD_HAS_HOSTED 1
 #if FD_HAS_HOSTED
 
 #include <ctype.h>
