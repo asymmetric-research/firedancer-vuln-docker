@@ -508,6 +508,7 @@ static void
 unprivileged_init( fd_topo_t *      topo,
                    fd_topo_tile_t * tile ) {
   void * scratch = fd_topo_obj_laddr( topo, tile->tile_obj_id );
+
   if( FD_UNLIKELY( tile->in_cnt==0 ) ) {
     FD_LOG_ERR(( "quic tile has no input links" ));
   }

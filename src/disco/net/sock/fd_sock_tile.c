@@ -267,6 +267,7 @@ static void
 unprivileged_init( fd_topo_t *      topo,
                    fd_topo_tile_t * tile ) {
   fd_sock_tile_t * ctx = fd_topo_obj_laddr( topo, tile->tile_obj_id );
+  
   if( FD_UNLIKELY( tile->out_cnt > MAX_NET_OUTS ) ) {
     FD_LOG_ERR(( "sock tile has %lu out links which exceeds the max (%lu)", tile->out_cnt, MAX_NET_OUTS ));
   }

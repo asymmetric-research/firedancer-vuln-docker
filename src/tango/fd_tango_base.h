@@ -162,9 +162,6 @@ union __attribute__((aligned(FD_FRAG_META_ALIGN))) fd_frag_meta {
     ushort ctl;    /* naturally atomic r/w, Message reassembly control bits (origin/clock domain, SOM/EOM/ERR flags) */
     uint   tsorig; /* naturally atomic r/w, Message diagnostic compressed timestamps */
     uint   tspub;  /* naturally atomic r/w, " */
-    /* Hook function pointer used by the fuzzing build (single-threaded,
-       intra-tile). */
-    void (* hook)( union fd_frag_meta const * meta );
   };
 
 
