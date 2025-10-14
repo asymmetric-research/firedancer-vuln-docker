@@ -1,5 +1,9 @@
 #include "driver.h"
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include "../platform/fd_file_util.h"
+
 
 char const * FD_APP_NAME    = "fd_quiz_fuzz";
 char const * FD_BINARY_NAME = "fd_quic_fuzz";
@@ -55,8 +59,20 @@ main( int    argc,
     if( FD_UNLIKELY( !shmem ) ) FD_LOG_ERR(( "malloc failed" ));
     fd_drv_t * drv = fd_drv_join( fd_drv_new( shmem, TILES, CALLBACKS ) );
     if( FD_UNLIKELY( !drv ) ) FD_LOG_ERR(( "creating quic fuzz driver failed" ));
+    const char * opt_user_config_path = fd_env_strip_cmdline_cstr(
+      &argc,
+      &argv,
+      "--config",
+      "FIREDANCER_CONFIG_TOML",
+      NULL );
+    char * user_config = NULL;
+    ulong user_config_sz = 0UL;
+    if( FD_LIKELY( opt_user_config_path ) ) {
+      user_config = fd_file_util_read_all( opt_user_config_path, &user_config_sz );
+      if( FD_UNLIKELY( user_config==MAP_FAILED ) ) FD_LOG_ERR(( "failed to read user config file `%s` (%d-%s)", opt_user_config_path, errno, fd_io_strerror( errno ) ));
+    }      
 
-    fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, NULL, 0UL, NULL, &drv->config );
+    fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, user_config, user_config_sz, opt_user_config_path, &drv->config );
     FD_LOG_INFO(("NAME %s", drv->config.name ));
     fd_drv_init( drv );
     return 0;

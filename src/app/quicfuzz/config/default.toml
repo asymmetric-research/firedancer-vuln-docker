@@ -99,7 +99,7 @@ dynamic_port_range = "8900-9000"
     # lower than this will be skipped.  Must be one of the levels
     # described above.  This should be at least the same as the level
     # for the log file.
-    level_stderr = "NOTICE"
+    level_stderr = "DEBUG"
 
     # The minimum log level which will immediately flush the log file to
     # disk.  Must be one of the levels described above.

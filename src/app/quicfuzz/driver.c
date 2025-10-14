@@ -93,7 +93,7 @@ isolated_quic_topo( fd_drv_t * drv ) {
 
   fd_topo_cpus_t cpus[1];
   fd_topo_cpus_init( cpus );
-  
+
   ulong affinity_tile_cnt = 2UL;
   // if( FD_LIKELY( !is_auto_affinity ) ) affinity_tile_cnt = fd_tile_private_cpus_parse( affinity, parsed_tile_to_cpu );
 
@@ -184,11 +184,15 @@ fd_drv_init( fd_drv_t * drv ) {
 
 	isolated_quic_topo( drv);	
 	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
+  fd_log_level_stderr_set( conf->log.level_stderr1 );
+  fd_log_level_flush_set( conf->log.level_flush1);
+
   configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
   configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
   fdctl_check_configure( conf );
   initialize_workspaces(conf);
-  initialize_stacks( conf );  
+  initialize_stacks( conf );
+    
   fdctl_setup_netns( conf, 1 );  
   fd_topo_join_workspaces( &conf->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
