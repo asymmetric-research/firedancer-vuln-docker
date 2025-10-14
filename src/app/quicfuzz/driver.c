@@ -31,7 +31,6 @@ fd_drv_align( void ) {
   return alignof(fd_drv_t);
 }
 
-
 void *
 fd_drv_new( void * shmem, fd_topo_run_tile_t ** tiles, fd_topo_obj_callbacks_t ** callbacks ) {
   fd_drv_t * drv = (fd_drv_t *)shmem;
@@ -74,16 +73,16 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 		fd_cstr_fini( fd_cstr_append_cstr_safe( fd_cstr_init( tile->quic.key_log_path ), config->tiles.quic.ssl_key_log_file, sizeof(tile->quic.key_log_path) ) );
 	}
   else if( FD_UNLIKELY( !strcmp( tile->name, "sock" ) ) ) {
+    // tile->net.shred_listen_port              = config->tiles.shred.shred_listen_port;
+    tile->net.quic_transaction_listen_port   = config->tiles.quic.quic_transaction_listen_port;
+    tile->net.legacy_transaction_listen_port = config->tiles.quic.regular_transaction_listen_port;    
 
-  	tile->sock.net.bind_address = config->net.bind_address_parsed;
-
+  	// tile->sock.net.bind_address = config->net.bind_address_parsed;
   	if( FD_UNLIKELY( config->net.socket.receive_buffer_size>INT_MAX ) ) FD_LOG_ERR(( "invalid [net.socket.receive_buffer_size]" ));
   	if( FD_UNLIKELY( config->net.socket.send_buffer_size   >INT_MAX ) ) FD_LOG_ERR(( "invalid [net.socket.send_buffer_size]" ));
   	tile->sock.so_rcvbuf = (int)config->net.socket.receive_buffer_size;
   	tile->sock.so_sndbuf = (int)config->net.socket.send_buffer_size   ;
-	
-	}
-													
+	}												
 }
 
 void
