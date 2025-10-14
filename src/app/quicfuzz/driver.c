@@ -73,11 +73,8 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 		fd_cstr_fini( fd_cstr_append_cstr_safe( fd_cstr_init( tile->quic.key_log_path ), config->tiles.quic.ssl_key_log_file, sizeof(tile->quic.key_log_path) ) );
 	}
   else if( FD_UNLIKELY( !strcmp( tile->name, "sock" ) ) ) {
-    // tile->net.shred_listen_port              = config->tiles.shred.shred_listen_port;
     tile->net.quic_transaction_listen_port   = config->tiles.quic.quic_transaction_listen_port;
     tile->net.legacy_transaction_listen_port = config->tiles.quic.regular_transaction_listen_port;    
-
-  	// tile->sock.net.bind_address = config->net.bind_address_parsed;
   	if( FD_UNLIKELY( config->net.socket.receive_buffer_size>INT_MAX ) ) FD_LOG_ERR(( "invalid [net.socket.receive_buffer_size]" ));
   	if( FD_UNLIKELY( config->net.socket.send_buffer_size   >INT_MAX ) ) FD_LOG_ERR(( "invalid [net.socket.send_buffer_size]" ));
   	tile->sock.so_rcvbuf = (int)config->net.socket.receive_buffer_size;
@@ -91,7 +88,6 @@ isolated_quic_topo( fd_drv_t * drv ) {
   FD_LOG_INFO(("config name : %s", config->name));
   fd_topo_t * topo = &config->topo;
 
-  // ulong tile_to_cpu[ FD_TILE_MAX ] = {0}; // required by net helpers
   ushort parsed_tile_to_cpu[ FD_TILE_MAX ];
   for( ulong i=0UL; i<FD_TILE_MAX; i++ ) parsed_tile_to_cpu[ i ] = USHORT_MAX;
 
@@ -161,22 +157,10 @@ FOR(quic_tile_cnt)  fd_topos_tile_in_net( topo,"metric_in", "quic_net",i,FD_TOPO
 FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.ingress_buffer_size );
 FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
-
-
-//   fd_topob_wksp( topo, "verify");
-// FOR(quic_tile_cnt)   fd_topob_tile( topo, "verify","verify","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
-// FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
-// FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
-// FOR(quic_tile_cnt) fd_topob_tile_in( topo, "verify", i, "metric_in", "quic_verify", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
-
-
   for( ulong i=0UL; i<topo->tile_cnt; i++ ) fd_topo_configure_tile( &topo->tiles[ i ], config );
 
 FOR(net_tile_cnt) fd_topos_net_tile_finish( topo, i );
 
-
-  // fd_topob_auto_layout( topo, 0 );
-  // topo->agave_affinity_cnt = 0;
   fd_topob_finish( topo, drv->callbacks );
   fd_topo_print_log( /* stdout */ 1, topo );
 }
@@ -208,7 +192,6 @@ fd_drv_init( fd_drv_t * drv ) {
   fdctl_setup_netns( conf, 1 );  
   fd_topo_join_workspaces( &conf->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
-	// init_tiles( drv );  
   fd_topo_run_single_process( &drv->config.topo, 2, drv->config.uid,  drv->config.gid, fdctl_tile_run );
   for(;;) pause(); 
 }
