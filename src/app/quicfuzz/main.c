@@ -47,9 +47,7 @@ extern ulong const fdquic_default_config_sz;
 FD_IMPORT_BINARY( fdquic_default_config, "src/app/quicfuzz/config/default.toml" );
 
 
-
 action_t * ACTIONS[] = { NULL };
-
 
 int
 main( int    argc,
@@ -72,12 +70,10 @@ main( int    argc,
       FD_LOG_INFO(("USER CONFIG"));
       user_config = fd_file_util_read_all( opt_user_config_path, &user_config_sz );
       if( FD_UNLIKELY( user_config==MAP_FAILED ) ) FD_LOG_ERR(( "failed to read user config file `%s` (%d-%s)", opt_user_config_path, errno, fd_io_strerror( errno ) ));
-      fd_config_load( 0, 0, 1, (char const *)NULL, 0UL, NULL, NULL, 0UL, user_config, user_config_sz, opt_user_config_path, &drv->config );      
+      fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, user_config, user_config_sz, opt_user_config_path, &drv->config );
     } else {
       fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, NULL, 0UL, NULL, &drv->config );
     }
-
-
     FD_LOG_INFO(("NAME %s", drv->config.name ));
     FD_LOG_INFO(("user %s", drv->config.user ));
     fd_drv_init( drv );
