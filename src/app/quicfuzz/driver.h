@@ -43,10 +43,6 @@ fd_drv_leave( fd_drv_t * drv );
 void *
 fd_drv_delete( void * shmem );
 
-void
-fd_drv_publish_hook( fd_frag_meta_t const * mcache );
-
-
 
 /* Use fd_link_permit_no_producers with links that do not have any
    producers.  This may be required in sub-topologies used for
@@ -74,6 +70,7 @@ fd_link_permit_no_consumers( fd_topo_t * topo, char * link_name ) {
     if( !strcmp( topo->links[ link_i ].name, link_name ) ) {
       topo->links[ link_i ].permit_no_consumers = 1;
       found++;
+      break;
     }
   }
   return found;

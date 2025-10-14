@@ -59,15 +59,6 @@ fd_drv_delete( void * shmem ) {
 
 
 void
-fd_drv_publish_hook( fd_frag_meta_t const * mcache ) {
-  FD_LOG_NOTICE(( "fd_drv_publish_hook received chunk of size %u", mcache->sz ));
-  /* relay to another tile using the send function, validate data, or
-     ignore */
-}
-
-
-
-void
 fd_topo_configure_tile( fd_topo_tile_t * tile,
                         fd_config_t *    config ) {
 	FD_LOG_INFO(("TILE NAME %s", tile->name));
@@ -152,6 +143,12 @@ isolated_quic_topo( fd_drv_t * drv ) {
   fd_topob_wksp( topo, "quic_net");
 FOR(quic_tile_cnt)   fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
 FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+
+//quic link out to verify - use tricks to add link with no consumers
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+fd_link_permit_no_consumers(topo, "quic_verify");
+FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
+
 FOR(quic_tile_cnt) fd_topob_tile_out(    topo, "quic",i,"quic_net",  i);
 /**
  * adds `quic_net` as link in to tile `sock`
@@ -165,10 +162,7 @@ FOR(quic_tile_cnt)  fd_topos_tile_in_net( topo,"metric_in", "quic_net",i,FD_TOPO
 FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.ingress_buffer_size );
 FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
-//quic link out to verify - use tricks to add link with no consumers
-FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
-fd_link_permit_no_consumers(topo, "quic_verify");
-FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
+
 
 //   fd_topob_wksp( topo, "verify");
 // FOR(quic_tile_cnt)   fd_topob_tile( topo, "verify","verify","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
