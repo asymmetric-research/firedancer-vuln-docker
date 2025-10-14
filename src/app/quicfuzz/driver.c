@@ -93,7 +93,7 @@ isolated_quic_topo( fd_drv_t * drv ) {
 
   fd_topo_cpus_t cpus[1];
   fd_topo_cpus_init( cpus );
-
+  
   ulong affinity_tile_cnt = 2UL;
   // if( FD_LIKELY( !is_auto_affinity ) ) affinity_tile_cnt = fd_tile_private_cpus_parse( affinity, parsed_tile_to_cpu );
 
