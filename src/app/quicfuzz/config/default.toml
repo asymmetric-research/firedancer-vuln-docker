@@ -1,4 +1,4 @@
-name = "quic_firestarter"
+name = "quic_firestarter_0"
 user = "vaioco"
 
 # Absolute directory path to place scratch files used during setup and
@@ -1055,14 +1055,14 @@ dynamic_port_range = "8900-9000"
         # Higher values reduce TPU packet loss over unreliable networks.
         # If this parameter is set too low, packet loss can cause some
         # large transactions to get dropped.  Must be 2 or larger.
-        txn_reassembly_count = 131072
+        txn_reassembly_count = 4
 
         # QUIC has a handshake process which establishes a secure
         # connection between two endpoints.  The handshake process is
         # very expensive. So we allow only a limited number of
         # handshakes to occur concurrently.
         #
-        max_concurrent_handshakes = 4096
+        max_concurrent_handshakes = 8
 
         # QUIC has a concept of an idle connection, one where neither
         # the client nor the server has sent any packet to the other for
