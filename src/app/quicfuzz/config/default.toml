@@ -1,5 +1,5 @@
 name = "quic_firestarter_0"
-user = "vaioco"
+user = "fuzz"
 
 # Absolute directory path to place scratch files used during setup and
 # operation.  The ledger and accounts databases will also be placed in

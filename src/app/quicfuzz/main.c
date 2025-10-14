@@ -46,9 +46,6 @@ extern uchar const fdquic_default_config[];
 extern ulong const fdquic_default_config_sz;
 FD_IMPORT_BINARY( fdquic_default_config, "src/app/quicfuzz/config/default.toml" );
 
-extern uchar const fdctl_default_config[];
-extern ulong const fdctl_default_config_sz;
-FD_IMPORT_BINARY( fdctl_default_config, "src/app/fdctl/config/default.toml" );
 
 
 action_t * ACTIONS[] = { NULL };
