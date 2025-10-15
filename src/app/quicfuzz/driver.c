@@ -187,8 +187,11 @@ fd_drv_init( fd_drv_t * drv ) {
   fd_log_level_stderr_set( conf->log.level_stderr1 );
   fd_log_level_flush_set( conf->log.level_flush1);
 
-  configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
-  configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
+  if(!drv->is_firestarter){
+    configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
+    configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
+  }
+  
   fdctl_check_configure( conf );
   initialize_workspaces(conf);
   initialize_stacks( conf );

@@ -15,6 +15,7 @@ struct fd_drv_private {
   fd_topo_run_tile_t **      tiles;
   fd_topo_obj_callbacks_t ** callbacks;
   fd_config_t                config;
+  int                        is_firestarter;
 };
 typedef struct fd_drv_private fd_drv_t;
 

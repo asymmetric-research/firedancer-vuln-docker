@@ -64,6 +64,13 @@ main( int    argc,
       "--config",
       "FIREDANCER_CONFIG_TOML",
       NULL );
+    int is_firestarter = fd_env_strip_cmdline_int(
+      &argc,
+      &argv,
+      "--firestarter",
+      "IS_FIRESTARTER",
+      0UL );
+    drv->is_firestarter = is_firestarter; 
     char * user_config = NULL;
     ulong user_config_sz = 0UL;
     if( FD_LIKELY( opt_user_config_path ) ) {
