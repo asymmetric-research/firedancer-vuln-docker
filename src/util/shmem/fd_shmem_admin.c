@@ -59,7 +59,7 @@ fd_shmem_page_sz_to_cstr( ulong page_sz ) {
   }
   return "unknown";
 }
-
+#define FD_HAS_HOSTED 1
 #if FD_HAS_HOSTED
 
 #include <ctype.h>
@@ -229,7 +229,7 @@ fd_shmem_create_multi_flags( char const *  name,
   void * shmem;
 
   ulong  sz = page_cnt*page_sz;
-
+  FD_LOG_INFO(("SHMEM PGSIZE %lu TOTAL %lu", page_sz, sz ));
   /* Save this thread's numa node mempolicy */
 
   if( FD_UNLIKELY( fd_numa_get_mempolicy( &orig_mempolicy, orig_nodemask, FD_SHMEM_NUMA_MAX, NULL, 0UL ) ) ) {
