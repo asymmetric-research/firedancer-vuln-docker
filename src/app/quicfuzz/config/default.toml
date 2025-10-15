@@ -1,5 +1,5 @@
 name = "quic_firestarter_0"
-user = "fuzz"
+user = "vaioco"
 
 # Absolute directory path to place scratch files used during setup and
 # operation.  The ledger and accounts databases will also be placed in
@@ -824,7 +824,7 @@ dynamic_port_range = "8900-9000"
     # are either "huge" (2 MiB) or "gigantic" (1 GiB).  Larger sizes
     # yield better performance.  Smaller values may be required on
     # virtualized environments like cloud providers.
-    max_page_size = "gigantic"
+    max_page_size = "huge"
 
     # Workspaces are either fully backed by "huge" or "gigantic" pages.
     # Workspaces with footprint equal to or greater than the given value
@@ -838,7 +838,7 @@ dynamic_port_range = "8900-9000"
     # pages available to run the application, configuration will fail
     # with an error.  If allowed, configuration will attempt to reserve
     # enough pages from the kernel that running will always succeed.
-    allow_hugepage_increase = true
+    allow_hugepage_increase = false
 
 # The network stack is provided by net tiles, which are responsible for
 # sending and receiving packets on the network.
