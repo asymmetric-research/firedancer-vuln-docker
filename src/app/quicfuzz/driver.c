@@ -171,6 +171,18 @@ fd_drv_init( fd_drv_t * drv ) {
   fd_config_t* conf = &drv->config;
 
   char * shmem_args[ 3 ];
+
+	isolated_quic_topo( drv);	
+	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
+  fd_log_level_stderr_set( conf->log.level_stderr1 );
+  fd_log_level_flush_set( conf->log.level_flush1);
+
+  if(!drv->is_firestarter){
+    configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
+    configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
+    fdctl_check_configure( conf );    
+  }
+
   /* pass in --shmem-path value from the config */
   shmem_args[ 0 ] = "--shmem-path";
   shmem_args[ 1 ] = conf->hugetlbfs.mount_path;
@@ -182,17 +194,6 @@ fd_drv_init( fd_drv_t * drv ) {
   fd_log_private_boot  ( &argc, &argv );
   fd_tile_private_boot  ( &argc, &argv );
 
-	isolated_quic_topo( drv);	
-	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
-  fd_log_level_stderr_set( conf->log.level_stderr1 );
-  fd_log_level_flush_set( conf->log.level_flush1);
-
-  if(!drv->is_firestarter){
-    configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
-    configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
-  }
-  
-  fdctl_check_configure( conf );
   initialize_workspaces(conf);
   initialize_stacks( conf );
     
