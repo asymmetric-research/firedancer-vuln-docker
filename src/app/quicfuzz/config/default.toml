@@ -1,4 +1,4 @@
-name = "quic_firestarter_0"
+name = "quic_firestarter_default"
 user = "vaioco"
 
 # Absolute directory path to place scratch files used during setup and
@@ -105,36 +105,7 @@ dynamic_port_range = "8900-9000"
     # disk.  Must be one of the levels described above.
     level_flush = "WARNING"
 
-# The client supports sending health reports, and performance and
-# diagnostic information to a remote server for collection and analysis.
-# This reporting powers the Solana Validator Dashboard and is often used
-# by developers to monitor network health.
-[reporting]
-    # A metrics environment string describing where to report the
-    # diagnostic event data to.  The options for public clusters are
-    # described at https://docs.solanalabs.com/clusters/available,
-    # and are:
-    #
-    # mainnet-beta:
-    #   "host=https://metrics.solana.com:8086,db=mainnet-beta,u=mainnet-beta_write,p=password"
-    #
-    # devnet:
-    #   "host=https://metrics.solana.com:8086,db=devnet,u=scratch_writer,p=topsecret"
-    #
-    # testnet:
-    #   "host=https://metrics.solana.com:8086,db=tds,u=testnet_write,p=c4fa841aa918bf8274e3e2a44d77568d9861b3ea"
-    #
-    # If no option is provided here, event reporting is disabled.
-    #
-    # This string is passed to the Agave client with the
-    # `SOLANA_METRICS_CONFIG` environment variable.
-    solana_metrics_config = ""
 
-# The ledger is the set of information that can be replayed to get back
-# to the current state of the chain.  In Solana, it is considered a
-# combination of the genesis, and the recent unconfirmed blocks.  The
-# accounts database (the current balance of all the accounts) is
-# information that is derived from the ledger.
 [ledger]
     # Absolute directory path to place the ledger.  Firedancer currently
     # spawns a Agave validator to execute transactions that it
@@ -229,106 +200,16 @@ dynamic_port_range = "8900-9000"
     # argument.
     require_tower = false
 
-[gossip]
-    # Routable DNS name or IP address and port number to use to
-    # rendezvous with the gossip cluster.  These entrypoints are passed
-    # to the Agave client with the `--entrypoint` argument.
-    entrypoints = []
-
-    # If true, checks at startup that at least one of the provided
-    # entrypoints can connect to this validator on all necessary ports.
-    # If it can't, then the validator will exit.
-    #
-    # This option is passed to the Agave client inverted with the
-    # `--no-port-check` argument.
-    port_check = true
-
-    # The port number to use for receiving gossip messages on this
-    # validator.  This option is passed to the Agave client with
-    # the `--gossip-port` argument.  This argument is required.  Agave
-    # treats this as an optional argument, but the code that tries
-    # to find a default will always fail.
-    port = 8001
-
-[rpc]
-    # If nonzero, enable JSON RPC on this port, and use the next port
-    # for the RPC websocket.  If zero, disable JSON RPC.  This option is
-    # passed to the Agave client with the `--rpc-port` argument.
-    port = 0
-
-    # If true, all RPC operations are enabled on this validator,
-    # including non-default RPC methods for querying chain state and
-    # transaction history.  This option is passed to the Agave
-    # client with the `--full-rpc-api` argument.
-    full_api = false
-
-    # If the RPC is private, the validator's open RPC port is not
-    # published in the `solana gossip` command for use by others.  This
-    # option is passed to the Agave client with the
-    # `--private-rpc` argument.
-    private = false
-
-    # The address to bind the RPC port.  If no address is specified,
-    # the default RPC bind address is 127.0.0.1 if [rpc.private] = true,
-    # otherwise it's 0.0.0.0.  This option is passed to the Agave client
-    # with the `--rpc-bind-address` argument.
-    bind_address = ""
-
-    # RPC address for the validator to advertise publicly in gossip.
-    # Useful for validators running behind a load balancer or proxy.
-    # This option is passed to the Agave client
-    # with the `--public-rpc-address` argument.
-    public_address = ""
-
-    # Enable historical transaction info over JSON RPC, including the
-    # `getConfirmedBlock` API.  This will cause an increase in disk
-    # usage and IOPS.  This option is passed to the Agave client
-    # with the `--enable-rpc-transaction-history` argument.
-    transaction_history = false
-
-    # If enabled, include CPI inner instructions, logs, and return data
-    # in the historical transaction info stored.  This option is passed
-    # to the Agave client with the
-    # `--enable-extended-tx-metadata-storage` argument.
-    extended_tx_metadata_storage = false
-
-    # If true, use the RPC service of known validators only.  This
-    # option is passed to the Agave client with the
-    # `--only-known-rpc` argument.
-    only_known = true
-
-    # If true, enable the unstable RPC PubSub `blockSubscribe`
-    # subscription.  This option is passed to the Agave client
-    # with the `--rpc-pubsub-enable-block-subscription` argument.
-    pubsub_enable_block_subscription = false
-
-    # If true, enable the unstable RPC PubSub `voteSubscribe`
-    # subscription.  This option is passed to the Agave client
-    # with the `--rpc-pubsub-enable-vote-subscription` argument.
-    pubsub_enable_vote_subscription = false
-
-    # If enabled, fetch historical transaction info from a BigTable
-    # instance as a fallback to local ledger data when serving RPC
-    # requests.  The `GOOGLE_APPLICATION_CREDENTIALS` environment
-    # variable must be set to access BigTable.
-    #
-    # This option is passed to the Agave client with the
-    # `--enable-rpc-bigtable-ledger-storage` argument.
-    bigtable_ledger_storage = false
-
-# The Agave client periodically takes and stores snapshots of the
-# chain's state.  Other clients, especially as they bootstrap or catch
-# up to the head of the chain, may request a snapshot.
 [snapshots]
     # If false, all snapshots (both full and incremental) will not be
     # produced.  This option is passed to the Agave client (inverted)
     # with the `--no-snapshots` argument.
-    enabled = true
+    enabled = false
 
     # Enable incremental snapshots by setting this flag.  This option is
     # passed to the Agave client (inverted) with the
     # `--no-incremental-snapshots` argument.
-    incremental_snapshots = true
+    incremental_snapshots = false
 
     # Set how frequently full snapshots are taken, measured in slots,
     # where one slot is about 400ms on production chains.  It's
@@ -396,142 +277,6 @@ dynamic_port_range = "8900-9000"
     # client with the `--incremental-snapshot-archive-path` argument.
     incremental_path = ""
 
-[consensus]
-    # Absolute path to a `keypair.json` file containing the identity of
-    # the validator.  When connecting to dev, test, or mainnet it is
-    # required to provide an identity file.
-    #
-    # Two substitutions will be performed on this string.  If "{user}"
-    # is present it will be replaced with the user running Firedancer,
-    # as above, and "{name}" will be replaced with the name of the
-    # Firedancer instance.
-    #
-    # When running a local cluster, Firedancer will generate a keypair
-    # if one is not provided (or has not already been generated) and
-    # place it in this path.  If no path is provided, it is defaulted
-    # to inside the scratch directory, under path `identity.json`.
-    #
-    # This option is passed to the Agave client with the
-    # `--identity` argument.
-    identity_path = ""
-
-    # Absolute path to a `keypair.json` containing the voting account
-    # of the validator.  You can alternatively provide the base58
-    # encoded pubkey of the vote account to use with this validator.  If
-    # no voting account is provided, voting will be disabled and the
-    # validator will cast no votes.
-    #
-    # Two substitutions will be performed on this string.  If "{user}"
-    # is present it will be replaced with the user running Firedancer,
-    # as above, and "{name}" will be replaced with the name of the
-    # Firedancer instance.
-    #
-    # The authorized voter for the vote account must be either the
-    # identity keypair or one of the authorized-voter keypairs.
-    #
-    # When running a local cluster, Firedancer will generate a keypair
-    # if one is not provided (or has not already been generated) and
-    # place it in this path.  If no path is provided, it is defaulted
-    # to inside the scratch directory, under path `vote-account.json`.
-    #
-    # This option is passed to the Agave client with the
-    # `--vote-account` argument.
-    vote_account_path = ""
-
-    # List of absolute paths to authorized-voter keypairs for the vote
-    # account.  This is not needed if no vote account is specified.
-    # If a vote account is specified and this is empty, the identity
-    # account will be used as the authorized-voter account.
-    #
-    # Two substitutions will be performed on each string in this list.
-    # If "{user}" is present it will be replaced with the user running
-    # Firedancer, as above, and "{name}" will be replaced with the
-    # name of the Firedancer instance.
-    #
-    # These options are passed to the Agave client with the
-    # `--authorized-voter` argument.
-    authorized_voter_paths = []
-
-    # If false, do not attempt to fetch a snapshot from the cluster,
-    # instead start from a local snapshot if one is present.  A snapshot
-    # is required to run the validator, so either one must be present,
-    # or you need to fetch it.  The snapshot will be fetched from a
-    # validator in the list of entrypoints.  If no validators are listed
-    # there, starting the validator will fail.  This option is passed
-    # (inverted) to the Agave client with the `--no-snapshot-fetch`
-    # argument.
-    snapshot_fetch = true
-
-    # If false, do not attempt to fetch the genesis from the cluster.
-    # This option is passed (inverted) to the Agave client with
-    # the `--no-genesis-fetch` argument.
-    genesis_fetch = true
-
-    # On startup, do some simulations to see how fast the validator can
-    # generate proof of history. If it is too slow to keep up with the
-    # network, exit out during boot.  It is recommended to leave this on
-    # to ensure you can keep up with the network.  This option is passed
-    # to the Agave client (inverted) with the
-    # `--no-poh-speed-test` argument.
-    poh_speed_test = true
-
-    # If set, require the genesis block to have the given hash.  If it
-    # does not the validator will abort with an error.  This option is
-    # passed to the Agave client with the
-    # `--expected-genesis-hash` argument.
-    expected_genesis_hash = ""
-
-    # If nonzero, after processing the ledger, and the next slot is the
-    # provided value, wait until a supermajority of stake is visible on
-    # gossip before starting proof of history.  This option is passed to
-    # the Agave client with the `--wait-for-supermajority`
-    # argument.
-    wait_for_supermajority_at_slot = 0
-
-    # If there is a hard fork, it might be required to provide an
-    # expected bank hash to ensure the correct fork is being selected.
-    # If this is not provided, or we are not waiting for a
-    # supermajority, the bank hash is not checked. Otherwise, we require
-    # the bank at the supermajority slot to have this hash.  This option
-    # is passed to the Agave client with the
-    # `--expected-bank-hash` argument.
-    expected_bank_hash = ""
-
-    # The shred version is a small hash of the genesis block and any
-    # subsequent hard forks.  The Agave client uses it to filter
-    # out any shred traffic from validators that disagree with this
-    # validator on the genesis hash or the set of hard forks.  If
-    # nonzero, ignore any shreds that have a different shred version
-    # than this value.  If zero, the expected shred version is
-    # automatically determined by copying the shred version that the
-    # entrypoint validator is using.  This option is passed to the
-    # Agave client with the `--expected-shred-version` argument.
-    expected_shred_version = 0
-
-    # If the validator starts up with no ledger, it will wait to start
-    # block production until it sees a vote land in a rooted slot.  This
-    # prevents double signing.  Turn off to risk double signing a block.
-    # This option is passed to the Agave client (inverted) with
-    # the `--no-wait-for-vote-to-start-leader` argument.
-    wait_for_vote_to_start_leader = true
-
-    # Perform a network speed test on starting up the validator.  If
-    # this is not disabled, and the speed test fails, the validator will
-    # refuse to start.  This option is passed to the Agave client
-    # (inverted) with the `--no-os-network-limits-test` argument.
-    os_network_limits_test = true
-
-    # If nonempty, add a hard fork at each of the provided slots.  These
-    # options are passed to the Agave client with the
-    # `--hard-fork` argument.
-    hard_fork_at_slots = []
-
-    # A set of validators we trust to publish snapshots.  If a snapshot
-    # is not published by a validator with one of these keys, it is
-    # ignored.  If no known validators are specified, any hash will be
-    # accepted.  These options are passed to the Agave client with
-    # the `--known-validator` argument.
-    known_validators = []
 
 # CPU cores in Firedancer are carefully managed.  Where a typical
 # program lets the operating system scheduler determine which threads to
@@ -722,6 +467,7 @@ dynamic_port_range = "8900-9000"
     #
     # Resolve tiles are responsible for resolving address lookup tables
     # before transactions are scheduled.
+    # CANNOT BE 0 LOL
     resolv_tile_count = 1
 
     # How many verify tiles to run.  Verify tiles perform signature
@@ -736,7 +482,7 @@ dynamic_port_range = "8900-9000"
     # transactions per second.  Six tiles seems to be enough to handle
     # current `mainnet-beta` traffic, unless the validator is under a
     # denial of service or spam attack.
-    verify_tile_count = 6
+    verify_tile_count = 1
 
     # How many bank tiles to run.  Should be set to 4 for perf and
     # balanced scheduling modes.  Bank tiles execute transactions, so
@@ -758,7 +504,7 @@ dynamic_port_range = "8900-9000"
     # result in better blocks.  Adding too many bank tiles does have
     # diminishing returns, and it's suggested to experiment with values
     # around 10-20.
-    bank_tile_count = 4
+    bank_tile_count = 1
 
     # How many shred tiles to run.  Should be set to 1.  This is
     # configurable and designed to scale out for future network
@@ -830,7 +576,7 @@ dynamic_port_range = "8900-9000"
     # Workspaces with footprint equal to or greater than the given value
     # in MiB are backed by "gigantic" pages unless disabled via
     # max_page_size.
-    gigantic_page_threshold_mib = 128
+    gigantic_page_threshold_mib = 4096
 
     # Whether the hugetlbfs configure stage is allowed to increase the
     # number of huge or gigantic pages available on the system.  If not
@@ -838,7 +584,7 @@ dynamic_port_range = "8900-9000"
     # pages available to run the application, configuration will fail
     # with an error.  If allowed, configuration will attempt to reserve
     # enough pages from the kernel that running will always succeed.
-    allow_hugepage_increase = false
+    allow_hugepage_increase = true
 
 # The network stack is provided by net tiles, which are responsible for
 # sending and receiving packets on the network.
@@ -893,7 +639,7 @@ dynamic_port_range = "8900-9000"
     # replace older ones, which will be dropped.  Smaller values use
     # less memory.  Larger values decrease link overruns caused by
     # excessive latency.
-    ingress_buffer_size = 16384
+    ingress_buffer_size = 1024
 
     # This section contains XDP-specific network configuration.
     # Only active if [net.provider] is set to "xdp".
@@ -978,47 +724,17 @@ dynamic_port_range = "8900-9000"
     [net.socket]
         # Sets the socket receive buffer size via SO_RCVBUF.
         # Raises net.core.rmem_max accordingly
-        receive_buffer_size = 134217728
+        receive_buffer_size = 1024
 
         # Sets the socket receive buffer size via SO_SNDBUF.
         # Raises net.core.wmem_max accordingly
-        send_buffer_size = 134217728
+        send_buffer_size = 1024
 
 # Tiles are described in detail in the layout section above.  While the
 # layout configuration determines how many of each tile to place on
 # which CPU core to create a functioning system, below is the individual
 # settings that can change behavior of the tiles.
 [tiles]
-    # The netlink tile forwards Linux network configuration to net tiles.
-    # This config section contains advanced options that typically do not
-    # need to be changed.
-    # For further info, see https://docs.firedancer.io/guide/netlink.html
-    [tiles.netlink]
-        # The maximum number of routes per route table.
-        #
-        # The netlink tile imports two route tables from Linux, namely
-        # `local` and `main`.  You can view them by running
-        # `ip route show table main`.  Decreasing this option can result
-        # in connectivity issues.  Increasing this option can drastically
-        # decrease performance.
-        #
-        # For virtually all cloud and bare-metal server providers, the
-        # number of routes per table does not exceed 16, excluding the
-        # /32 routes, see below.
-        max_routes = 128
-
-        # This setting configures the maximum number of IPv4 routes with a
-        # /32 netmask per route table. This setting is relevant for Double Zero
-        # accelerated networking, which uses one /32 route per peer on the
-        # network. The number of /32 routes should not exceed 100,000.
-        max_peer_routes = 8192
-
-        # The maximum number of Ethernet neighbors.
-        #
-        # This should be roughly as large as the size your Ethernet subnet.
-        # E.g. if your IP address is 198.51.100.3/24, then your subnet has
-        # up to 256 neighbors (2^(32-24)).
-        max_neighbors = 4096
 
     # QUIC tiles are responsible for serving network traffic, including
     # parsing and responding to packets and managing connection timeouts
@@ -1043,7 +759,7 @@ dynamic_port_range = "8900-9000"
         # be accepted.
         #
         # This must be >= 2 and also a power of 2.
-        max_concurrent_connections = 131072
+        max_concurrent_connections = 4
 
         # Controls how many transactions coming in via TPU can be
         # reassembled at the same time.  Reassembly is required for user
@@ -1062,7 +778,7 @@ dynamic_port_range = "8900-9000"
         # very expensive. So we allow only a limited number of
         # handshakes to occur concurrently.
         #
-        max_concurrent_handshakes = 8
+        max_concurrent_handshakes = 4
 
         # QUIC has a concept of an idle connection, one where neither
         # the client nor the server has sent any packet to the other for
@@ -1094,18 +810,13 @@ dynamic_port_range = "8900-9000"
         # recently, used to discard duplicate transactions before they
         # get verified to save signature verification resources.  See
         # [tiles.dedup.signature_cache_size] below for more information.
-        signature_cache_size = 4194302
+        signature_cache_size = 1024
 
         # The maximum number of messages in-flight between a QUIC tile
         # and associated verify tile, after which earlier messages might
         # start being overwritten, and get dropped so that the system
         # can keep up.
-        receive_buffer_size = 16384
-
-    # After being verified, all transactions are sent to a dedup tile to
-    # ensure the same transaction is not repeated multiple times.  The
-    # dedup tile keeps a rolling history of signatures it has seen and
-    # drops any that are duplicated, before forwarding unique ones on.
+        receive_buffer_size = 1024
     [tiles.dedup]
         # The size of the cache that stores unique signatures we have
         # seen to deduplicate.  This is the maximum number of signatures
@@ -1120,75 +831,43 @@ dynamic_port_range = "8900-9000"
         #
         # The default value here, 2^26 - 2 is a good balance, as it fits
         # in 1 GiB of memory using a single gigantic page.
-        signature_cache_size = 33554430
+        signature_cache_size = 2
 
-    # The bundle tile receives bundles from a block producer remote
-    # endpoint and forwards them for execution to pack.
-    [tiles.bundle]
-        # True if a bundle tile should be enabled, which receives
-        # bundles from a remote block engine and forwards them for
-        # atomic execution to the pack tile.
-        enabled = false
-
-        # The URL of the block engine to receive blocks from.
-        url = ""
-
-        # The domain name of the TLS certificate to use when verifying
-        # the peer.  If none is provided, the domain from the URL above
-        # will be used by default.
+    [tiles.shred]
+        # When this validator is not the leader, it receives the most
+        # recent processed transactions from the leader and other
+        # validators in the form of shred packets.  Shreds are grouped
+        # in sets for error correction purposes, and the full validation
+        # of a shred packet requires receiving at least half of the set.
+        # Since shreds frequently arrive out of order, the shred tile
+        # needs a relatively large buffer to hold sets of shreds until
+        # they can be fully validated.  This option specifies the size
+        # of this buffer.
         #
-        # This is only needed in special cases where the block engine
-        # peer presents a certificate for a different domain that where
-        # it is being accessed.
-        tls_domain_name = ""
+        # To compute an appropriate value, multiply the expected Turbine
+        # worst-case latency (tenths of seconds) by the expected
+        # transaction rate, and divide by approx 25.
+        max_pending_shred_sets = 2
 
-        # The tip distribution program is used to control the
-        # distribution of tips that transactions from bundles may pay.
-        # This should be set to the public key of the tip distribution
-        # program.  Consult the block engine provider's documentation
-        # for the appropriate value of this field.
-        tip_distribution_program_addr = ""
+        # The shred tile listens on a specific port for shreds to
+        # forward.  This argument controls which port that is.  The port
+        # is broadcast over gossip so other validators know how to reach
+        # this one.
+        shred_listen_port = 8003
 
-        # The tip payment program handles the regular collection of tips
-        # into the account configured by the tip distribution program.
-        # This should be set to the public key of the tip payment
-        # program.  Consult the block engine provider's documentation
-        # for the appropriate value of this field.
-        tip_payment_program_addr = ""
+        # Shreds can also be forwarded to specific addresses, for
+        # example to run an unstaked RPC or for archiving.  Each new, valid
+        # shred that the validator receives will be forwarded to the
+        # addresses specified in additional_shred_destinations_retransmit.
+        # Each shred that the validor produced when it is leader will be
+        # sent to the addresses specified in
+        # additional_shred_destinations_leader.  Destinations must be in the
+        # form "ip:port", for example "1.2.3.4:5566".  Shreds will
+        # be sent to these destinations first, prior to sending to other
+        # validators.
+        additional_shred_destinations_retransmit = []
+        additional_shred_destinations_leader = []  
 
-        # A validator may want to distribute tips from transactions to
-        # their stakers or to any other relevant parties.  Authority is
-        # delegated to the public key provided in the
-        # tip_distribution_authority to determine the distribution by
-        # uploading a hash tree.  This field should be set to the
-        # base58 public key.
-        tip_distribution_authority = ""
-
-        # The standard tip distribution mechanism distributes tips
-        # pro rata to stakers with the validator optionally taking a
-        # portion as a fee.  The commission set below, measured in basis
-        # points (100ths of a percent), determines the validator's
-        # portion.
-        commission_bps = 0
-
-        # The validator keeps the gRPC connection to the bundle server
-        # alive indefinitely, even outside of leader slots.  This is
-        # done using HTTP/2 PING frames.  This option roughly configures
-        # the time between keepalives.  The actual timing is randomized
-        # to reduce burst loads on the network.  Must be within range
-        # [3e3,3600e3]
-        keepalive_interval_millis = 5000
-
-        # By default, the TLS certificate of the bundle server is
-        # verified against the CA certs in /etc/ssl/certs, if the URL
-        # specifies https.  To disable certificate verification, set
-        # this option to 'false'.
-        tls_cert_verify = true
-
-    # The pack tile takes incoming transactions that have been verified
-    # by the verify tile and then deduplicated, and attempts to order
-    # them in an optimal way to generate the most fees per compute
-    # resource used to execute them.
     [tiles.pack]
         # The pack tile receives transactions while it is waiting to
         # become leader and stores them for future execution.  This
@@ -1196,7 +875,7 @@ dynamic_port_range = "8900-9000"
         # will be stored before those with the lowest estimated
         # profitability get dropped.  The maximum allowed, and default
         # value is 65524. It is not recommended to change this.
-        max_pending_transactions = 65524
+        max_pending_transactions = 2
 
         # When a transaction consumes fewer CUs than it requests, the
         # bank and pack tiles work together to adjust the block limits
@@ -1257,104 +936,38 @@ dynamic_port_range = "8900-9000"
         # revert to the "perf" strategy.
         schedule_strategy = "perf"
 
-    # The bank tile is what executes transactions and updates the
-    # accounting state as a result of any operations performed by the
-    # transactions.  Currently, the bank tile is implemented by the
-    # Agave execution engine and is not configurable.
-    [tiles.bank]
-
-    # The proof of history tile receives transactions from bank tiles
-    # and mixes their hashes into a continuous stream of hashes that
-    # proves to other validators time is passing.
-    [tiles.poh]
-        # A validator will always be leader for at least four
-        # consecutive slots, which looks like ....
+    [tiles.netlink]
+        # The maximum number of routes per route table.
         #
-        #   +-------------+----+----+----+----+-------------+
-        #   |     ...     | s0 | s1 | s2 | s3 |     ...     |
-        #   +-------------+----+----+----+----+-------------+
-        #                t0    t1
+        # The netlink tile imports two route tables from Linux, namely
+        # `local` and `main`.  You can view them by running
+        # `ip route show table main`.  Decreasing this option can result
+        # in connectivity issues.  Increasing this option can drastically
+        # decrease performance.
         #
-        # Leader slots are 400 milliseconds, so in a well-behaved
-        # validator the start time of slot s1 (t1) will be 400
-        # milliseconds after s0 (t0).
+        # For virtually all cloud and bare-metal server providers, the
+        # number of routes per table does not exceed 16, excluding the
+        # /32 routes, see below.
+        max_routes = 2
+
+        # This setting configures the maximum number of IPv4 routes with a
+        # /32 netmask per route table. This setting is relevant for Double Zero
+        # accelerated networking, which uses one /32 route per peer on the
+        # network. The number of /32 routes should not exceed 100,000.
+        max_peer_routes = 2
+
+        # The maximum number of Ethernet neighbors.
         #
-        # Agave validators start late, at some time t0 + 400 + x, where
-        # x is the time it takes the validator to "freeze" slot s0.
-        # This is typically around 100 milliseconds, but can be up to
-        # 300 or so in degenerate cases.  This is not good for the
-        # network because it increases confirmation times and skip
-        # rates, but it is beneficial to the individual validator (a
-        # tragedy of the commons) because the validator is leader
-        # longer, can receive higher paying transactions for longer,
-        # and ultimately generate more fees for the operator.
-        #
-        # Firedancer defaults to matching the Agave behavior here and
-        # starting late, but you can disable the option to use a more
-        # healthy behavior, where taking a long time to "freeze" slots
-        # cuts into your own next slot time, and does not increase it.
-        lagged_consecutive_leader_start = false
-
-    # The shred tile distributes processed transactions that have been
-    # executed to the rest of the cluster in the form of shred packets.
-    [tiles.shred]
-        # When this validator is not the leader, it receives the most
-        # recent processed transactions from the leader and other
-        # validators in the form of shred packets.  Shreds are grouped
-        # in sets for error correction purposes, and the full validation
-        # of a shred packet requires receiving at least half of the set.
-        # Since shreds frequently arrive out of order, the shred tile
-        # needs a relatively large buffer to hold sets of shreds until
-        # they can be fully validated.  This option specifies the size
-        # of this buffer.
-        #
-        # To compute an appropriate value, multiply the expected Turbine
-        # worst-case latency (tenths of seconds) by the expected
-        # transaction rate, and divide by approx 25.
-        max_pending_shred_sets = 512
-
-        # The shred tile listens on a specific port for shreds to
-        # forward.  This argument controls which port that is.  The port
-        # is broadcast over gossip so other validators know how to reach
-        # this one.
-        shred_listen_port = 8003
-
-        # Shreds can also be forwarded to specific addresses, for
-        # example to run an unstaked RPC or for archiving.  Each new, valid
-        # shred that the validator receives will be forwarded to the
-        # addresses specified in additional_shred_destinations_retransmit.
-        # Each shred that the validor produced when it is leader will be
-        # sent to the addresses specified in
-        # additional_shred_destinations_leader.  Destinations must be in the
-        # form "ip:port", for example "1.2.3.4:5566".  Shreds will
-        # be sent to these destinations first, prior to sending to other
-        # validators.
-        additional_shred_destinations_retransmit = []
-        additional_shred_destinations_leader = []
-
-    # The metric tile receives metrics updates published from the rest
-    # of the tiles and serves them via. a Prometheus compatible HTTP
-    # endpoint.
-    [tiles.metric]
-        # The address to listen on.  By default, metrics are only
-        # accessible from the local machine.  If you wish to expose them
-        # to the network, you can change the listen address.
-        #
-        # The Firedancer team makes a best effort to secure the metrics
-        # endpoint but exposing it to the internet from a production
-        # validator is not recommended as it increases the attack
-        # surface of the validator.
-        prometheus_listen_address = "127.0.0.1"
-
-        # The port to listen on for HTTP request for Prometheus metrics.
-        # Firedancer serves metrics at a URI like 127.0.0.1:7999/metrics
-        prometheus_listen_port = 7999
+        # This should be roughly as large as the size your Ethernet subnet.
+        # E.g. if your IP address is 198.51.100.3/24, then your subnet has
+        # up to 256 neighbors (2^(32-24)).
+        max_neighbors = 2
 
     # The gui tile receives data from the validator and serves an HTTP
     # endpoint to clients to view it.
     [tiles.gui]
         # If the GUI is enabled.
-        enabled = true
+        enabled = false
 
         # The address to listen on.  By default, if enabled, the GUI
         # will only be accessible from the local machine.  If you wish
@@ -1406,7 +1019,7 @@ dynamic_port_range = "8900-9000"
     #
     # In development, you can disable the sandbox for testing and
     # debugging with the `--no-sandbox` argument to `fddev`.
-    sandbox = true
+    sandbox = false
 
     # As part of the security sandboxing, Firedancer will run every tile
     # in a separate process.  This can be annoying for debugging where
@@ -1501,91 +1114,41 @@ dynamic_port_range = "8900-9000"
         # IP address of the second network namespace.
         interface1_addr = "198.18.0.2"
 
-    [development.gossip]
-        # Under normal operating conditions, a validator should always
-        # reach out to a host located on the public internet.  If this
-        # value is true, it allows the validator to gossip with nodes
-        # configuration item allows Firedancer to gossip with nodes
-        # located on a private internet (rfc1918).
+    [development.bundle]
+        # Specify the maximum Protobuf message size in KiB.
         #
-        # This option is passed to the Agave client with the
-        # `--allow-private-addr` argument.
-        allow_private_address = false
+        # This affects the size of various gRPC-related buffers,
+        # including socket buffer sizes, the TLS buffer, the HTTP/2
+        # frame buffer, and a Protobuf encode buffer.
+        buffer_size_kib = 2
 
-    [development.genesis]
-        # When creating a new chain from genesis during development,
-        # this option can be used to specify the number of hashes in
-        # each tick of the proof history component.
+        # SSL library heap size in MiB.
         #
-        # A value of one is the default, and will be used to mean that
-        # the proof of history component will run in low power mode,
-        # and use one hash per tick.  This is equivalent to a value of
-        # "sleep" when providing hashes-per-tick to the Agave
-        # genesis.
+        # When connecting to an HTTPS bundle endpoint, the SSL library
+        # dynamic allocations in a fixed size heap region.  This option
+        # controls the size of that region.
+        ssl_heap_size_mib = 64
+
+        # Log TLS encryption keys for block engine connection.  An empty
+        # string (the default) disables key logging.
         #
-        # A value of zero means the genesis will automatically determine
-        # the number of hashes in each tick based on how many hashes
-        # the generating computer can do in the target tick duration
-        # specified below.
-        #
-        # This value specifies the initial value for the chain in the
-        # genesis, but it might be overridden at runtime if the related
-        # features which increase this value are enabled. The features
-        # are named like `update_hashes_per_tick2`.
-        #
-        # A value of 62,500 is the same as mainnet-beta, devnet, and
-        # testnet, following activation of the `update_hashes_per_tick6`
-        # feature.
-        hashes_per_tick = 62_500
-
-        # How long each tick of the proof of history component should
-        # take, in microseconds.  This value specifies the initial value
-        # of the chain and it will not change at runtime.  The default
-        # value used here is the same as mainnet, devnet, and testnet.
-        target_tick_duration_micros = 6250
-
-        # The number of ticks in each slot.  This value specifies the
-        # initial value of the chain and it will not change at runtime.
-        # The default value used here is the same as mainnet, devnet,
-        # and testnet.
-        ticks_per_slot = 64
-
-        # The count of accounts to pre-fund in the genesis block with
-        # SOL.  Useful for benchmarking and development.  The specific
-        # accounts that will be funded are those with private-keys of
-        # 0, 1, 2, .... N.
-        fund_initial_accounts = 1024
-
-        # The amount of SOL to pre-fund each account with.
-        fund_initial_amount_lamports = 50000000000000
-
-        # The number of lamports to stake on the voting account of the
-        # validator that starts up from the genesis.  Genesis creation
-        # will fund the staking account passed to it with this amount
-        # and then stake it on the voting account.  Note that the voting
-        # account key used in the genesis needs to be the same as the
-        # one that is used by the bootstrap validator.
-        vote_account_stake_lamports = 500000000
-
-        # Setting warmup epochs to true will allow shorter epochs towards
-        # the beginning of the cluster.  This allows for faster stake
-        # activation.  The first epoch will be 32 slots long and the
-        # duration of each subsequent epoch will be double that of the
-        # one before it until it reaches the desired epoch duration of the
-        # cluster.
-        warmup_epochs = false
+        # Keys are appended in NSS SSLKEYLOGFILE format to the given
+        # file path.  A file is created if none exists.  The resulting
+        # file can be used to decrypt packet captures of gRPC conns
+        # made by the bundle tile.
+        ssl_key_log_file = ""
 
     [development.bench]
         # How many benchg tiles to run when benchmarking.  benchg tiles
         # are responsible for generating and signing outgoing
         # transactions to the validator which is expensive.
-        benchg_tile_count = 4
+        benchg_tile_count = 1
 
         # How many benchs tiles to run when benchmarking.  benchs tiles
         # are responsible for sending transactions to the validator, for
         # example by calling send() on a socket.  On loopback, a single
         # benchs tile can send around 320k packets a second.
-        benchs_tile_count = 2
+        benchs_tile_count = 1
 
         # Which cores to run the benchmarking tiles on.  By default, the
         # cores will be floating but to get good performance
@@ -1666,81 +1229,65 @@ dynamic_port_range = "8900-9000"
         # with this option enabled will always be leader.
         disable_status_cache = false
 
-    # Experimental options for the bundle tile.  These should not be
-    # changed on a production validator.
-    [development.bundle]
-        # Specify the maximum Protobuf message size in KiB.
+    [development.genesis]
+        # When creating a new chain from genesis during development,
+        # this option can be used to specify the number of hashes in
+        # each tick of the proof history component.
         #
-        # This affects the size of various gRPC-related buffers,
-        # including socket buffer sizes, the TLS buffer, the HTTP/2
-        # frame buffer, and a Protobuf encode buffer.
-        buffer_size_kib = 16384
+        # A value of one is the default, and will be used to mean that
+        # the proof of history component will run in low power mode,
+        # and use one hash per tick.  This is equivalent to a value of
+        # "sleep" when providing hashes-per-tick to the Agave
+        # genesis.
+        #
+        # A value of zero means the genesis will automatically determine
+        # the number of hashes in each tick based on how many hashes
+        # the generating computer can do in the target tick duration
+        # specified below.
+        #
+        # This value specifies the initial value for the chain in the
+        # genesis, but it might be overridden at runtime if the related
+        # features which increase this value are enabled. The features
+        # are named like `update_hashes_per_tick2`.
+        #
+        # A value of 62,500 is the same as mainnet-beta, devnet, and
+        # testnet, following activation of the `update_hashes_per_tick6`
+        # feature.
+        hashes_per_tick = 62_500
 
-        # SSL library heap size in MiB.
-        #
-        # When connecting to an HTTPS bundle endpoint, the SSL library
-        # dynamic allocations in a fixed size heap region.  This option
-        # controls the size of that region.
-        ssl_heap_size_mib = 64
+        # How long each tick of the proof of history component should
+        # take, in microseconds.  This value specifies the initial value
+        # of the chain and it will not change at runtime.  The default
+        # value used here is the same as mainnet, devnet, and testnet.
+        target_tick_duration_micros = 6250
 
-        # Log TLS encryption keys for block engine connection.  An empty
-        # string (the default) disables key logging.
-        #
-        # Keys are appended in NSS SSLKEYLOGFILE format to the given
-        # file path.  A file is created if none exists.  The resulting
-        # file can be used to decrypt packet captures of gRPC conns
-        # made by the bundle tile.
-        ssl_key_log_file = ""
+        # The number of ticks in each slot.  This value specifies the
+        # initial value of the chain and it will not change at runtime.
+        # The default value used here is the same as mainnet, devnet,
+        # and testnet.
+        ticks_per_slot = 64
 
-    # The following options relate to the 'fddev pktgen' tool only.
-    # pktgen tests net tile transmit throughput by generating a flood of
-    # non-routable Ethernet frames.  Only use 'fddev pktgen' if you know
-    # what you are doing!  It can cause damage to your system and network
-    # infrastructure.
-    [development.pktgen]
-        # Which cores to run the 'net' and 'pktgen' tiles on.
-        # By default, two fixed cores will be used.  To get reliable
-        # measurements, avoid the use of floating tiles.
-        # This setting overrides [layout.affinity] above.
-        affinity = "auto"
+        # The count of accounts to pre-fund in the genesis block with
+        # SOL.  Useful for benchmarking and development.  The specific
+        # accounts that will be funded are those with private-keys of
+        # 0, 1, 2, .... N.
+        fund_initial_accounts = 1024
 
-        # fake_dst_ip should be set to the IP address of a neighbor on the
-        # Ethernet network.  (For example the router the system is directly
-        # connected to.)
-        #
-        # The net tile queries the route and neighbor tables as part of the
-        # benchmark.  In short, these resolve the dst MAC address of the
-        # outgoing Ethernet packets.  Since pktgen does not produce IPv4
-        # packets, no traffic actually gets sent to this IP.
-        #
-        # The IP address should fulfill these requirements:
-        # - 'ip route get <IP>' resolves to the XDP interface
-        #   (see [net.interface])
-        # - 'ip neigh get <NEXTHOP> dev <INTERFACE>' returns REACHABLE
-        # If these requirements are not met, no packets will be sent out.
-        fake_dst_ip = ""  # e.g. "192.0.2.64"
+        # The amount of SOL to pre-fund each account with.
+        fund_initial_amount_lamports = 50000000000000
 
-    # The following options relate to the 'fddev udpecho' tool only.
-    # This testing feature echos back incoming UDP packets using the
-    # production networking stack.
-    [development.udpecho]
-        affinity = "auto"
+        # The number of lamports to stake on the voting account of the
+        # validator that starts up from the genesis.  Genesis creation
+        # will fund the staking account passed to it with this amount
+        # and then stake it on the voting account.  Note that the voting
+        # account key used in the genesis needs to be the same as the
+        # one that is used by the bootstrap validator.
+        vote_account_stake_lamports = 500000000
 
-    # Development only options for the GUI tile.  These should not be
-    # change on a production validator.
-    [development.gui]
-        # Enables support for WebSocket compression.  Compression may
-        # improve startup speed when loading the GUI and decrease
-        # overall bandwidth use.  GUI WebSocket messages are by default
-        # always a single WebSocket text frame with plaintext JSON
-        # contents.  If this option is enabled, a client may indicate
-        # support for receiving compressed messages with the
-        # Sec-WebSocket-Protocol header.
-        #
-        # If compression is successfully negotiated, the server will
-        # optionally compress large frames with ZSTD, indicating this
-        # by marking the frame as binary instead of text.
-        #
-        # This option has not been tested or security audited and should
-        # not currently be used in production.
-        websocket_compression = false
+        # Setting warmup epochs to true will allow shorter epochs towards
+        # the beginning of the cluster.  This allows for faster stake
+        # activation.  The first epoch will be 32 slots long and the
+        # duration of each subsequent epoch will be double that of the
+        # one before it until it reaches the desired epoch duration of the
+        # cluster.
+        warmup_epochs = false
