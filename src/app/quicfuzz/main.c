@@ -84,6 +84,7 @@ main( int    argc,
     FD_LOG_INFO(("NAME %s", drv->config.name ));
     FD_LOG_INFO(("user %s", drv->config.user ));
     FD_LOG_INFO(("is_firestarter %d", drv->is_firestarter ));
+    FD_LOG_INFO(("pages %s", drv->config.hugetlbfs.max_page_size ));
     fd_drv_init( drv );
     return 0;
 }
