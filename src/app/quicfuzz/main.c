@@ -83,6 +83,7 @@ main( int    argc,
     }
     FD_LOG_INFO(("NAME %s", drv->config.name ));
     FD_LOG_INFO(("user %s", drv->config.user ));
+    FD_LOG_INFO(("is_firestarter %d", drv->is_firestarter ));
     fd_drv_init( drv );
     return 0;
 }
