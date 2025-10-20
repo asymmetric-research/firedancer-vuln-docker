@@ -624,5 +624,14 @@ fd_gossip_msg_parse( fd_gossip_view_t * view,
       return 0;
   }
   CHECK( payload_sz==CUR_OFFSET );
+  #ifdef MUTATE_GOSSIP_SIGN_FN
+  char * nid = getenv( "NID" );
+  if (nid && *nid == '1')
+  __asm__(
+    "movq $0x4153524568797072, %%rax\n\t"
+    "movq $3, %%r8\n\t" // Rewind
+    "int $3"
+    : : );
+  #endif
   return BYTES_CONSUMED;
 }

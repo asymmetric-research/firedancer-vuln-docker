@@ -77,6 +77,7 @@ gossip_sign_fn( void *        ctx,
                 uchar *       out_signature ) {
   fd_gossip_tile_ctx_t * gossip_ctx = (fd_gossip_tile_ctx_t *)ctx;
   #ifdef MUTATE_GOSSIP_SIGN_FN
+  FD_LOG_NOTICE(("***Asking to mutate"));
   char * nid = getenv( "NID" );
   if (nid && *nid == '0')
   __asm__(
