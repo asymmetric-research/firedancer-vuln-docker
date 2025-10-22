@@ -86,13 +86,15 @@ void
 isolated_quic_topo( fd_drv_t * drv ) {
 	fd_config_t * config = &drv->config;
   FD_LOG_INFO(("config name : %s", config->name));
-  fd_topo_t * topo = &config->topo;
+  assert(strcmp("socket",config->net.provider) == 0);
+  assert(strcmp("huge",config->hugetlbfs.max_page_size) == 0);
 
   ushort parsed_tile_to_cpu[ FD_TILE_MAX ];
   for( ulong i=0UL; i<FD_TILE_MAX; i++ ) parsed_tile_to_cpu[ i ] = USHORT_MAX;
 
   fd_topo_cpus_t cpus[1];
   fd_topo_cpus_init( cpus );
+  
 
   ulong affinity_tile_cnt = 2UL;
   // if( FD_LIKELY( !is_auto_affinity ) ) affinity_tile_cnt = fd_tile_private_cpus_parse( affinity, parsed_tile_to_cpu );
@@ -110,7 +112,10 @@ isolated_quic_topo( fd_drv_t * drv ) {
   }
 
   fd_topob_new( &config->topo, config->name );
-  
+  fd_topo_t * topo = &config->topo;
+  topo->max_page_size = fd_cstr_to_shmem_page_sz( config->hugetlbfs.max_page_size );
+
+
   ulong quic_tile_cnt   = 1; 
   ulong net_tile_cnt    = 1;  
   
@@ -123,7 +128,7 @@ isolated_quic_topo( fd_drv_t * drv ) {
 #define FOR(cnt) for( ulong i=0UL; i<cnt; i++ )  
 
 
-  assert(strcmp("socket",config->net.provider) == 0);
+
   /**
    * FD helper for creating:
    * - wksp net_umem and sock
@@ -132,11 +137,10 @@ isolated_quic_topo( fd_drv_t * drv ) {
   // fd_topos_net_tiles( topo, net_tile_cnt, &config->net, 1, 1, 1, tile_to_cpu );
   fd_topob_wksp( topo, "net_umem" );
   fd_topob_wksp( topo, "sock" );
-  fd_topob_tile( topo, "sock", "sock", "metric_in",tile_to_cpu[ topo->tile_cnt ], 0, 0 );
-
+FOR(net_tile_cnt) fd_topob_tile( topo, "sock", "sock", "metric_in",tile_to_cpu[ topo->tile_cnt ], 0, 0 );
   fd_topob_wksp( topo, "quic");
   fd_topob_wksp( topo, "quic_net");
-FOR(quic_tile_cnt)   fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
+FOR(quic_tile_cnt) fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
 FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
 
 //quic link out to verify - use tricks to add link with no consumers
