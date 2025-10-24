@@ -20,7 +20,7 @@ struct fd_drv_private {
 typedef struct fd_drv_private fd_drv_t;
 
 void
-isolated_quic_topo( fd_drv_t * drv );
+isolated_quic_topo( config_t * config  );
 
 void
 fd_drv_init( fd_drv_t * drv );

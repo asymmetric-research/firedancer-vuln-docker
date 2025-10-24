@@ -3,20 +3,19 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include "../platform/fd_file_util.h"
-
+#include "../shared/boot/fd_boot.h"
+#include "config.h"
 
 char const * FD_APP_NAME    = "fd_quiz_fuzz";
 char const * FD_BINARY_NAME = "fd_quic_fuzz";
 
 extern fd_topo_run_tile_t fd_tile_quic;
 extern fd_topo_run_tile_t fd_tile_sock;
-// extern fd_topo_run_tile_t fd_tile_verify;
 
 extern fd_topo_obj_callbacks_t fd_obj_cb_tile;
 extern fd_topo_obj_callbacks_t fd_obj_cb_mcache;
 extern fd_topo_obj_callbacks_t fd_obj_cb_dcache;
 extern fd_topo_obj_callbacks_t fd_obj_cb_metrics;
-
 extern fd_topo_obj_callbacks_t fd_obj_cb_fseq;
 
 configure_stage_t * STAGES[] = {
@@ -41,10 +40,6 @@ fd_topo_run_tile_t * TILES[] = {
   // &fd_tile_verify,
   NULL
 };
-
-extern uchar const fdquic_default_config[];
-extern ulong const fdquic_default_config_sz;
-FD_IMPORT_BINARY( fdquic_default_config, "src/app/quicfuzz/config/default.toml" );
 
 
 action_t * ACTIONS[] = { NULL };
@@ -71,18 +66,21 @@ main( int    argc,
       "IS_FIRESTARTER",
       0UL );
     drv->is_firestarter = is_firestarter; 
-    char * user_config = NULL;
-    ulong user_config_sz = 0UL;
-    if( FD_LIKELY( opt_user_config_path ) ) {
-      FD_LOG_INFO(("USER CONFIG"));
-      user_config = fd_file_util_read_all( opt_user_config_path, &user_config_sz );
-      if( FD_UNLIKELY( user_config==MAP_FAILED ) ) FD_LOG_ERR(( "failed to read user config file `%s` (%d-%s)", opt_user_config_path, errno, fd_io_strerror( errno ) ));
-      fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, user_config, user_config_sz, opt_user_config_path, &drv->config );
-    } else {
-      fd_config_load( 0, 0, 1, (char const *)fdquic_default_config, fdquic_default_config_sz, NULL, NULL, 0UL, NULL, 0UL, NULL, &drv->config );
-    }
-    FD_LOG_INFO(("NAME %s", drv->config.name ));
-    FD_LOG_INFO(("user %s", drv->config.user ));
+
+    fd_config_file_t _default = (fd_config_file_t){
+      .name    = "default",
+      .data    = fdctl_default_config,
+      .data_sz = fdctl_default_config_sz,
+    };
+
+    fd_config_file_t * configs[] = {
+      &_default,
+      NULL
+    };
+    fd_main_init( &argc, &argv, &drv->config, opt_user_config_path, 0, 0, NULL, configs, isolated_quic_topo );
+
+    FD_LOG_INFO(("default config size %lu", fdctl_default_config_sz));
+    FD_LOG_INFO(("user config %s", opt_user_config_path));
     FD_LOG_INFO(("is_firestarter %d", drv->is_firestarter ));
     FD_LOG_INFO(("pages %s", drv->config.hugetlbfs.max_page_size ));
     fd_drv_init( drv );

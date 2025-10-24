@@ -17,6 +17,7 @@
 extern fd_topo_run_tile_t fd_tile_quic;
 extern fd_topo_run_tile_t fd_tile_verify;
 extern fd_topo_run_tile_t fd_tile_net;
+extern fd_topo_obj_callbacks_t * CALLBACKS[];
 
 fd_topo_run_tile_t
 fdctl_tile_run( fd_topo_tile_t const * tile );
@@ -83,8 +84,8 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 }
 
 void
-isolated_quic_topo( fd_drv_t * drv ) {
-	fd_config_t * config = &drv->config;
+isolated_quic_topo( config_t * config  ) {
+	// fd_config_t * config = &drv->config;
   FD_LOG_INFO(("config name : %s", config->name));
   assert(strcmp("socket",config->net.provider) == 0);
   assert(strcmp("huge",config->hugetlbfs.max_page_size) == 0);
@@ -114,6 +115,7 @@ isolated_quic_topo( fd_drv_t * drv ) {
   fd_topob_new( &config->topo, config->name );
   fd_topo_t * topo = &config->topo;
   topo->max_page_size = fd_cstr_to_shmem_page_sz( config->hugetlbfs.max_page_size );
+  topo->gigantic_page_threshold = config->hugetlbfs.gigantic_page_threshold_mib << 20;  
 
 
   ulong quic_tile_cnt   = 1; 
@@ -141,10 +143,10 @@ FOR(net_tile_cnt) fd_topob_tile( topo, "sock", "sock", "metric_in",tile_to_cpu[ 
   fd_topob_wksp( topo, "quic");
   fd_topob_wksp( topo, "quic_net");
 FOR(quic_tile_cnt) fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
-FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.ingress_buffer_size, FD_NET_MTU, 1UL );
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.socket.receive_buffer_size, FD_NET_MTU, 1UL );
 
 //quic link out to verify - use tricks to add link with no consumers
-FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 1UL );
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->tiles.verify.receive_buffer_size, FD_NET_MTU, 1UL );
 fd_link_permit_no_consumers(topo, "quic_verify");
 FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
 
@@ -158,53 +160,26 @@ FOR(quic_tile_cnt)  fd_topos_tile_in_net( topo,"metric_in", "quic_net",i,FD_TOPO
  * creates link `net_quic` in wksp `net_umem` 
  * adds `net_quic` as tile `sock` out
  */
-FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.ingress_buffer_size );
+FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.socket.receive_buffer_size );
 FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
   for( ulong i=0UL; i<topo->tile_cnt; i++ ) fd_topo_configure_tile( &topo->tiles[ i ], config );
 
 FOR(net_tile_cnt) fd_topos_net_tile_finish( topo, i );
 
-  fd_topob_finish( topo, drv->callbacks );
+  fd_topob_finish( topo, CALLBACKS );
+  config->topo = *topo;
   fd_topo_print_log( /* stdout */ 1, topo );
 }
 
 void
 fd_drv_init( fd_drv_t * drv ) {
 	
-  fd_config_t* conf = &drv->config;
-
-  char * shmem_args[ 3 ];
-
-	isolated_quic_topo( drv);	
-	FD_LOG_INFO(("ISOLATED TOPO CREATED"));
-  fd_log_level_stderr_set( conf->log.level_stderr1 );
-  fd_log_level_flush_set( conf->log.level_flush1);
-
-  if(!drv->is_firestarter){
-    configure_stage( &fd_cfg_stage_sysctl,CONFIGURE_CMD_INIT, conf );
-    configure_stage( &fd_cfg_stage_hugetlbfs,CONFIGURE_CMD_INIT, conf );
-    fdctl_check_configure( conf );    
-  }
-
-  /* pass in --shmem-path value from the config */
-  shmem_args[ 0 ] = "--shmem-path";
-  shmem_args[ 1 ] = conf->hugetlbfs.mount_path;
-  shmem_args[ 2 ] = NULL;
-  char ** argv = shmem_args;
-  int     argc = 2;
-
-  fd_shmem_private_boot( &argc, &argv );
-  fd_log_private_boot  ( &argc, &argv );
-  fd_tile_private_boot  ( &argc, &argv );
-
-  initialize_workspaces(conf);
-  initialize_stacks( conf );
-    
-  fdctl_setup_netns( conf, 1 );  
-  fd_topo_join_workspaces( &conf->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
-  FD_LOG_INFO(( "tile cnt: %lu", conf->topo.tile_cnt ));
-  fd_topo_run_single_process( &drv->config.topo, 2, drv->config.uid,  drv->config.gid, fdctl_tile_run );
+  fd_config_t* config = &drv->config;
+  run_firedancer_init(config, 1,1);
+  fd_topo_join_workspaces( &config->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
+  fd_topo_fill( &config->topo );
+  fd_topo_run_single_process( &config->topo, 2, config->uid, config->gid, fdctl_tile_run );
   for(;;) pause(); 
 }
 
