@@ -141,10 +141,10 @@ FOR(net_tile_cnt) fd_topob_tile( topo, "sock", "sock", "metric_in",tile_to_cpu[ 
   fd_topob_wksp( topo, "quic");
   fd_topob_wksp( topo, "quic_net");
 FOR(quic_tile_cnt) fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ topo->tile_cnt ], 0,0 );
-FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.ingress_buffer_size, FD_NET_MTU, 1UL );
 
 //quic link out to verify - use tricks to add link with no consumers
-FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 64 );
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->net.ingress_buffer_size, FD_NET_MTU, 1UL );
 fd_link_permit_no_consumers(topo, "quic_verify");
 FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
 
