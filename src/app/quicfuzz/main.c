@@ -23,7 +23,6 @@ configure_stage_t * STAGES[] = {
   NULL,
 };
 
-
 fd_topo_obj_callbacks_t * CALLBACKS[] = {
     &fd_obj_cb_mcache,
     &fd_obj_cb_dcache,
@@ -69,8 +68,8 @@ main( int    argc,
 
     fd_config_file_t _default = (fd_config_file_t){
       .name    = "default",
-      .data    = fdctl_default_config,
-      .data_sz = fdctl_default_config_sz,
+      .data    = fdquic_default_config,
+      .data_sz = fdquic_default_config_sz,
     };
 
     fd_config_file_t * configs[] = {
@@ -79,7 +78,8 @@ main( int    argc,
     };
     fd_main_init( &argc, &argv, &drv->config, opt_user_config_path, 0, 0, NULL, configs, isolated_quic_topo );
 
-    FD_LOG_INFO(("default config size %lu", fdctl_default_config_sz));
+    FD_LOG_INFO(("default quic config size %lu", fdquic_default_config_sz));
+    FD_LOG_INFO(("fd config name %s", drv->config.name));
     FD_LOG_INFO(("user config %s", opt_user_config_path));
     FD_LOG_INFO(("is_firestarter %d", drv->is_firestarter ));
     FD_LOG_INFO(("pages %s", drv->config.hugetlbfs.max_page_size ));

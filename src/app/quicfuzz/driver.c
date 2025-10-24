@@ -85,8 +85,6 @@ fd_topo_configure_tile( fd_topo_tile_t * tile,
 
 void
 isolated_quic_topo( config_t * config  ) {
-	// fd_config_t * config = &drv->config;
-  FD_LOG_INFO(("config name : %s", config->name));
   assert(strcmp("socket",config->net.provider) == 0);
   assert(strcmp("huge",config->hugetlbfs.max_page_size) == 0);
 
@@ -146,7 +144,8 @@ FOR(quic_tile_cnt) fd_topob_tile( topo, "quic","quic","metric_in", tile_to_cpu[ 
 FOR(quic_tile_cnt) fd_topob_link( topo, "quic_net", "quic_net", config->net.socket.receive_buffer_size, FD_NET_MTU, 1UL );
 
 //quic link out to verify - use tricks to add link with no consumers
-FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->tiles.verify.receive_buffer_size, FD_NET_MTU, 1UL );
+FOR(quic_tile_cnt) fd_topob_link( topo, "quic_verify", "quic", config->tiles.verify.receive_buffer_size , FD_NET_MTU, 64UL );
+
 fd_link_permit_no_consumers(topo, "quic_verify");
 FOR(quic_tile_cnt) fd_topob_tile_out( topo, "quic",i,"quic_verify",  i);
 
@@ -160,7 +159,7 @@ FOR(quic_tile_cnt)  fd_topos_tile_in_net( topo,"metric_in", "quic_net",i,FD_TOPO
  * creates link `net_quic` in wksp `net_umem` 
  * adds `net_quic` as tile `sock` out
  */
-FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.socket.receive_buffer_size );
+FOR(net_tile_cnt) fd_topos_net_rx_link( topo, "net_quic",i, config->net.socket.send_buffer_size );
 FOR(net_tile_cnt) fd_topob_tile_in( topo, "quic", i, "metric_in", "net_quic", i, FD_TOPOB_UNRELIABLE, FD_TOPOB_POLLED );
 
   for( ulong i=0UL; i<topo->tile_cnt; i++ ) fd_topo_configure_tile( &topo->tiles[ i ], config );
@@ -169,7 +168,9 @@ FOR(net_tile_cnt) fd_topos_net_tile_finish( topo, i );
 
   fd_topob_finish( topo, CALLBACKS );
   config->topo = *topo;
-  fd_topo_print_log( /* stdout */ 1, topo );
+  fd_topo_print_log( /* stdout */ 1, &config->topo );
+  ulong cnt = fd_topo_huge_page_cnt(&config->topo, 0, 0);
+  FD_LOG_WARNING(("1TOPO HUGE PAGE CNT: %lu", cnt));  
 }
 
 void
@@ -179,6 +180,8 @@ fd_drv_init( fd_drv_t * drv ) {
   run_firedancer_init(config, 1,1);
   fd_topo_join_workspaces( &config->topo, FD_SHMEM_JOIN_MODE_READ_WRITE );
   fd_topo_fill( &config->topo );
+  ulong cnt = fd_topo_huge_page_cnt(&config->topo, 0, 0);
+  FD_LOG_WARNING(("TOPO HUGE PAGE CNT: %lu", cnt));
   fd_topo_run_single_process( &config->topo, 2, config->uid, config->gid, fdctl_tile_run );
   for(;;) pause(); 
 }

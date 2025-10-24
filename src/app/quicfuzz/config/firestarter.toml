@@ -1,4 +1,4 @@
-name = "fd_quicfirestarter_0"
+name = "fd1"
 user = "vaioco"
 
 dynamic_port_range = "8900-9000"
@@ -11,15 +11,15 @@ dynamic_port_range = "8900-9000"
 
 [net]
     provider = "socket"
-    ingress_buffer_size = 16384    
+    ingress_buffer_size = 4096    
     [net.socket]
         # Sets the socket receive buffer size via SO_RCVBUF.
         # Raises net.core.rmem_max accordingly
-        receive_buffer_size = 134217728
+        receive_buffer_size = 4096
 
         # Sets the socket receive buffer size via SO_SNDBUF.
         # Raises net.core.wmem_max accordingly
-        send_buffer_size = 134217728
+        send_buffer_size = 4096
 
 [layout]
     affinity = "auto"
@@ -45,9 +45,9 @@ dynamic_port_range = "8900-9000"
         regular_transaction_listen_port = 9001
         quic_transaction_listen_port = 9007
         # This must be >= 2 and also a power of 2.
-        max_concurrent_connections = 131072
+        max_concurrent_connections = 4096
         # Must be 2 or larger.
-        txn_reassembly_count = 131072
+        txn_reassembly_count = 4
         max_concurrent_handshakes = 4096
         idle_timeout_millis = 10000
         ack_delay_millis = 50
@@ -61,13 +61,12 @@ dynamic_port_range = "8900-9000"
         # recently, used to discard duplicate transactions before they
         # get verified to save signature verification resources.  See
         # [tiles.dedup.signature_cache_size] below for more information.
-        signature_cache_size = 4194302
+        signature_cache_size = 4096
         # The maximum number of messages in-flight between a QUIC tile
         # and associated verify tile, after which earlier messages might
         # start being overwritten, and get dropped so that the system
         # can keep up.
-        # 4096 = gigantic
-        receive_buffer_size = 16384
+        receive_buffer_size = 4096
     # The gui tile receives data from the validator and serves an HTTP
     # endpoint to clients to view it.
     [tiles.gui]
