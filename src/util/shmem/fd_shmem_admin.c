@@ -238,7 +238,8 @@ fd_shmem_create_multi_flags( char const *  name,
   }
 
   /* Create the region */
-
+  char* p = fd_shmem_private_path( name, page_sz, path );
+  FD_LOG_WARNING(("shmem private path %s", p));
   fd = open( fd_shmem_private_path( name, page_sz, path ), open_flags, (mode_t)mode );
   if( FD_UNLIKELY( fd==-1 ) ) {
     FD_LOG_WARNING(( "open(\"%s\",%#x,0%03lo) failed (%i-%s)", path, (uint)open_flags, mode, errno, fd_io_strerror( errno ) ));
@@ -253,8 +254,9 @@ fd_shmem_create_multi_flags( char const *  name,
   }
 
   /* Map the region into our address space. */
+  FD_LOG_WARNING(("cane allocating size: %lu", sz));
 
-  shmem = mmap( NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0);
+  shmem = mmap( NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_HUGETLB | MAP_HUGE_2MB, fd, (off_t)0);
   if( FD_UNLIKELY( shmem==MAP_FAILED ) ) {
     FD_LOG_WARNING(( "mmap(NULL,%lu KiB,PROT_READ|PROT_WRITE,MAP_SHARED,\"%s\",0) failed (%i-%s)",
                      sz>>10, path, errno, fd_io_strerror( errno ) ));
@@ -262,7 +264,7 @@ fd_shmem_create_multi_flags( char const *  name,
   }
 
   /* Validate the mapping */
-
+  FD_LOG_WARNING(("cane: shmem %p, page %lu", shmem, page_sz));
   if( FD_UNLIKELY( !fd_ulong_is_aligned( (ulong)shmem, page_sz ) ) ) {
     FD_LOG_WARNING(( "misaligned memory mapping for \"%s\"\n\t"
                      "This thread group's hugetlbfs mount path (--shmem-path / FD_SHMEM_PATH):\n\t"
