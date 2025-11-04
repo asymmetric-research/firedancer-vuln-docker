@@ -31,7 +31,7 @@
 /* FD_QUIC_DISABLE_CRYPTO: set to 1 to disable packet protection and
    encryption.  Only intended for testing. */
 #ifndef FD_QUIC_DISABLE_CRYPTO
-#define FD_QUIC_DISABLE_CRYPTO 0
+#define FD_QUIC_DISABLE_CRYPTO 1
 #endif
 
 #define FD_QUIC_PKT_NUM_UNUSED  (~0ul)

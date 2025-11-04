@@ -24,6 +24,10 @@ $(call add-objs,fd_quic_svc_q,fd_quic)
 
 $(call add-hdrs,fd_quic_proto.h fd_quic_proto_structs.h fd_quic_types.h)
 
+ifdef FD_HAS_FIRESTARTER
+$(call add-hdrs,firestarter.h)
+endif
+
 $(call add-hdrs,fd_quic_stream_pool.h)
 $(call add-objs,fd_quic_stream_pool,fd_quic)
 

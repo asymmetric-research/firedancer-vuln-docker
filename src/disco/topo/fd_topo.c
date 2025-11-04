@@ -82,6 +82,8 @@ fd_topo_create_workspace( fd_topo_t *      topo,
   ulong sub_cpu_idx [ 1 ] = { fd_shmem_cpu_idx( wksp->numa_idx ) };
 
   int err;
+  errno = 0;
+
   if( FD_UNLIKELY( !wksp->is_locked ) ) {
     err = fd_shmem_create_multi_unlocked( name, wksp->page_sz, wksp->page_cnt, S_IRUSR | S_IWUSR ); /* logs details */
   } else if( FD_UNLIKELY( update_existing ) ) {
@@ -355,9 +357,8 @@ fd_topo_print_log( int         stdout,
 
   ulong required_gigantic_pages = 0UL;
   ulong required_huge_pages = 0UL;
-
-  ulong numa_node_cnt = fd_shmem_numa_cnt();
-  for( ulong i=0UL; i<numa_node_cnt; i++ ) {
+  ulong numa_node_cnt = fd_shmem_numa_cnt();  
+  for( ulong i=0UL; i<=numa_node_cnt; i++ ) {
     required_gigantic_pages += fd_topo_gigantic_page_cnt( topo, i );
     required_huge_pages += fd_topo_huge_page_cnt( topo, i, 0 );
   }

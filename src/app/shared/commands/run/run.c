@@ -512,7 +512,7 @@ warn_unknown_files( config_t const * config,
   }
 
   struct dirent * entry;
-  while(( FD_LIKELY( entry = readdir( dir ) ) )) {
+  while(( FD_LIKELY( ( errno = 0, entry = readdir( dir ) ) ) )) {
     if( FD_UNLIKELY( !strcmp( entry->d_name, ".") || !strcmp( entry->d_name, ".." ) ) ) continue;
 
     char entry_path[ PATH_MAX ];

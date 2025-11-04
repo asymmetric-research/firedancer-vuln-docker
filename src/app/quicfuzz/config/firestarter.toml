@@ -1,0 +1,59 @@
+name = "fd1"
+user = "vaioco"
+
+dynamic_port_range = "8900-9000"
+
+[log]
+    colorize = "auto"
+    level_logfile = "INFO"
+    level_stderr = "DEBUG"
+    level_flush = "WARNING"
+
+[layout]
+    affinity = "auto"
+    verify_tile_count = 1
+    bank_tile_count = 1
+    shred_tile_count = 1
+    quic_tile_count = 1
+    net_tile_count = 1
+
+
+[hugetlbfs]
+    mount_path = "/mnt/.fd"
+    max_page_size = "huge"
+    gigantic_page_threshold_mib = 128
+    allow_hugepage_increase = true
+
+[snapshots]
+    enabled = false
+
+[development.netns]
+    enabled = false
+
+[tiles]
+    [tiles.quic]
+        regular_transaction_listen_port = 9001
+        quic_transaction_listen_port = 9007
+        # This must be >= 2 and also a power of 2.
+        max_concurrent_connections = 4096
+        # Must be 2 or larger.
+        txn_reassembly_count = 4
+        max_concurrent_handshakes = 4096
+        idle_timeout_millis = 10000
+        ack_delay_millis = 50
+        retry = false
+        # Log TLS encryption keys to decrypt QUIC traffic to this file
+        # path in NSS SSLKEYLOGFILE format.  An empty string (the
+        # default) disables key logging.
+        ssl_key_log_file = ""
+    [tiles.verify]
+        # The verify tiles have a cache of signatures they have seen
+        # recently, used to discard duplicate transactions before they
+        # get verified to save signature verification resources.  See
+        # [tiles.dedup.signature_cache_size] below for more information.
+        signature_cache_size = 4096
+        # The maximum number of messages in-flight between a QUIC tile
+        # and associated verify tile, after which earlier messages might
+        # start being overwritten, and get dropped so that the system
+        # can keep up.
+        receive_buffer_size = 4096

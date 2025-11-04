@@ -1,29 +1,42 @@
 #include "driver.h"
 #include <stdlib.h>
-#include "../shared/fd_action.h"
+#include <sys/mman.h>
+#include <errno.h>
+#include "../platform/fd_file_util.h"
+#include "../shared/boot/fd_boot.h"
+#include "config.h"
 
 char const * FD_APP_NAME    = "fd_quiz_fuzz";
 char const * FD_BINARY_NAME = "fd_quic_fuzz";
 
 extern fd_topo_run_tile_t fd_tile_quic;
-extern fd_topo_run_tile_t fd_tile_verify;
-extern fd_topo_run_tile_t fd_tile_net;
+extern fd_topo_run_tile_t fd_tile_sock;
 
-
+extern fd_topo_obj_callbacks_t fd_obj_cb_tile;
 extern fd_topo_obj_callbacks_t fd_obj_cb_mcache;
 extern fd_topo_obj_callbacks_t fd_obj_cb_dcache;
+extern fd_topo_obj_callbacks_t fd_obj_cb_metrics;
+extern fd_topo_obj_callbacks_t fd_obj_cb_fseq;
+
+configure_stage_t * STAGES[] = {
+  &fd_cfg_stage_sysctl,
+  NULL,
+};
 
 fd_topo_obj_callbacks_t * CALLBACKS[] = {
     &fd_obj_cb_mcache,
     &fd_obj_cb_dcache,
+    &fd_obj_cb_tile,
+    &fd_obj_cb_metrics,    
+    &fd_obj_cb_fseq,
     NULL,
 };
 
 
 fd_topo_run_tile_t * TILES[] = {
   &fd_tile_quic,
-  &fd_tile_verify,
-  &fd_tile_net,
+  &fd_tile_sock,
+  // &fd_tile_verify,
   NULL
 };
 
@@ -33,11 +46,57 @@ action_t * ACTIONS[] = { NULL };
 int
 main( int    argc,
       char** argv ) {
+    FD_LOG_INFO(("START"));
 
     void * shmem = aligned_alloc( fd_drv_align(), fd_drv_footprint() );
     if( FD_UNLIKELY( !shmem ) ) FD_LOG_ERR(( "malloc failed" ));
     fd_drv_t * drv = fd_drv_join( fd_drv_new( shmem, TILES, CALLBACKS ) );
-    if( FD_UNLIKELY( !drv ) ) FD_LOG_ERR(( "creating tile fuzz driver failed" ));
-    fd_drv_init( drv, argv[1] );
+    if( FD_UNLIKELY( !drv ) ) FD_LOG_ERR(( "creating quic fuzz driver failed" ));
+    const char * opt_user_config_path = fd_env_strip_cmdline_cstr(
+      &argc,
+      &argv,
+      "--config",
+      "FIREDANCER_CONFIG_TOML",
+      NULL );
+
+#if FD_HAS_FIRESTARTER
+    drv->is_firestarter = 1; 
+#else
+    drv->is_firestarter = 0; 
+#endif      
+
+    int       loglevel  = fd_env_strip_cmdline_int( &argc, &argv, "--level",NULL, 0);
+    fd_log_level_stderr_set(loglevel);
+    fd_log_level_logfile_set(loglevel);    
+
+    fd_config_file_t _default = (fd_config_file_t){
+      .name    = "default",
+      .data    = fdquic_default_config,
+      .data_sz = fdquic_default_config_sz,
+    };
+
+    fd_config_file_t * configs[] = {
+      &_default,
+      NULL
+    };
+    fd_main_init( &argc, &argv, &drv->config, opt_user_config_path, 0, 0, NULL, configs, isolated_quic_topo );
+
+    FD_LOG_INFO(("fd config name %s", drv->config.name));
+    FD_LOG_INFO(("user config %s", opt_user_config_path));
+    FD_LOG_INFO(("is_firestarter %d", drv->is_firestarter ));
+    fd_drv_init( drv );
     return 0;
 }
+
+
+
+/**
+ * ring buf for dirty pages they fill up 
+ * kvmdirty_log_rings
+ * for perf it does not set the bitmap but when they fill up you need to harvest by saving into storage
+ * this is what diff snap does
+ * automatic snap happens
+ * [2025-11-04T10:47:58Z INFO  vmm] No base snapshot and dirty rings are full. Not saving any changes until base snapshot is made
+ * after you need to have a clear starting point
+ * on restore the dirty ring buf is accessed 
+ */

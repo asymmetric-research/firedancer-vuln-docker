@@ -11,6 +11,12 @@
 #include "fd_quic_retry.h"
 #include "fd_quic_svc_q.h"
 
+#if FD_HAS_FIRESTARTER
+#include "../../app/quicfuzz/firestarter.h"
+#include "../../app/quicfuzz/shmem.h"
+#endif
+
+
 #define FD_TEMPL_FRAME_CTX fd_quic_frame_ctx_t
 #include "templ/fd_quic_frame_handler_decl.h"
 #include "templ/fd_quic_frames_templ.h"
@@ -2331,6 +2337,7 @@ fd_quic_process_packet_impl( fd_quic_t * quic,
   quic->metrics.net_rx_byte_cnt += data_sz;
   quic->metrics.net_rx_pkt_cnt++;
 
+
   ulong rc = 0;
 
   /* holds the remainder of the packet*/
@@ -2501,10 +2508,22 @@ fd_quic_process_packet( fd_quic_t  *  quic,
                         uchar      *  data,
                         ulong         data_sz,
                         long          now ) {
+#ifdef FD_HAS_FIRESTARTER
+  if(quic->config.role == FD_QUIC_ROLE_SERVER){
+    // FD_LOG_DEBUG(("FIRE MUTATE"));
+    // firestarter_mutate((void*)data, data_sz, FIRE_INPUT);
+  }
+#endif
   long now_ticks = fd_tickcount();
   fd_quic_process_packet_impl( quic, data, data_sz, now );
   long delta_ticks = fd_tickcount() - now_ticks;
   fd_histf_sample( quic->metrics.receive_duration, (ulong)delta_ticks );
+#ifdef FD_HAS_FIRESTARTER
+  if(quic->config.role == FD_QUIC_ROLE_SERVER){ 
+    // FD_LOG_DEBUG(("FIRE RESTORE"));
+    // firestarter_restore_snap();
+  }
+#endif  
 }
 
 /* main receive-side entry point */
