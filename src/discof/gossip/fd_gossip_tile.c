@@ -77,10 +77,13 @@ gossip_sign_fn( void *        ctx,
                 uchar *       out_signature ) {
   fd_gossip_tile_ctx_t * gossip_ctx = (fd_gossip_tile_ctx_t *)ctx;
   #ifdef MUTATE_GOSSIP_SIGN_FN
-  FD_LOG_NOTICE(("***Asking to mutate"));
+  FD_LOG_NOTICE(("***Asking to mutate %X %X", data[0], data[1]));
   char * nid = getenv( "NID" );
   if (nid && *nid == '0')
   __asm__(
+    "nop\n\t"
+    "nop\n\t"
+    "nop\n\t"
     "movq $0x4153524568797072, %%rax\n\t"
     "movq $5, %%r8\n\t"
     "movq %0, %%r9\n\t"

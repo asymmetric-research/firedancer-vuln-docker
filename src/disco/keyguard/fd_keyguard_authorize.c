@@ -143,6 +143,8 @@ fd_keyguard_payload_authorize( fd_keyguard_authority_t const * authority,
     FD_LOG_WARNING(( "unrecognized payload type (role=%#x)", (uint)role ));
   }
 
+  FD_LOG_NOTICE(("keygoard authorize %d %lx", role, payload_mask));
+
   int is_ambiguous = match_cnt != 1;
 
  /* We know that gossip, gossip prune, and repair messages are
