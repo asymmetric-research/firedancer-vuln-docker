@@ -1,9 +1,10 @@
-#include "common.h"
-#include "firestarter.h"
-#include "shmem.h"
 #if !FD_HAS_FIRESTARTER
 #error "This target requires FD_HAS_FIRESTARTER"
 #endif
+#include "common.h"
+#include "firestarter.h"
+#include "shmem.h"
+
  
 void firestarter_init(void){
     FD_LOG_WARNING(("!calling firestarter shmem"));
